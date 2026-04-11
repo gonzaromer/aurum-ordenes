@@ -910,7 +910,7 @@ function saveNewPassword() {
   const p1 = document.getElementById('new-pw1').value;
   const p2 = document.getElementById('new-pw2').value;
   const err = document.getElementById('chpw-err');
-  if (!p1 || p1.length < 4) { err.textContent = 'Mínimo 4 caracteres'; return; }
+  if (!p1) { err.textContent = 'Ingresá una contraseña'; return; }
   if (p1 !== p2) { err.textContent = 'Las contraseñas no coinciden'; return; }
   var hashed = btoa(p1);
   passwords[currentUser.id] = hashed;
