@@ -1169,7 +1169,21 @@ function renderTable() {
 
 function updateStatus(id, val) {
   const o = orders.find(x=>x.id===id);
-  if (o) { o.estado=val; showToast('✓ Estado → "'+val+'"'); renderTable(); }
+  if (!o) return;
+  // Update in Firebase (single source of truth)
+  if (window.__db && o.fbKey) {
+    window.__db.ref('ordenes/' + o.fbKey).update({estado: val})
+      .then(function() { showToast('✓ Estado → "' + val + '"'); })
+      .catch(function(e) {
+        o.estado = val;
+        renderTable();
+        showToast('✓ Estado → "' + val + '"');
+      });
+  } else {
+    o.estado = val;
+    renderTable();
+    showToast('✓ Estado → "' + val + '"');
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1355,10 +1369,22 @@ function submitOrder() {
   if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
   if (tab==='conv'  && !newOrder.monedaConv) { showToast('⚠ Seleccioná la moneda de conversión'); return; }
 
-  orders.unshift(newOrder);
+  // Save to Firebase (single source of truth)
+  if (window.__db) {
+    window.__db.ref('ordenes').push(newOrder)
+      .then(function() { showToast('✓ Orden ' + id + ' enviada'); })
+      .catch(function(e) {
+        // Fallback local
+        orders.unshift(newOrder);
+        renderTable();
+        showToast('✓ Orden ' + id + ' guardada localmente');
+      });
+  } else {
+    orders.unshift(newOrder);
+    renderTable();
+    showToast('✓ Orden ' + id + ' enviada');
+  }
   closeModal();
-  renderTable();
-  showToast('✓ Orden '+id+' enviada correctamente');
 }
 
 // ═══════════════════════════════════════════════════
