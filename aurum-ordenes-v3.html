@@ -44,6 +44,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-body)
   position:relative;z-index:1;
   animation:fadeUp 0.5s cubic-bezier(.22,1,.36,1) forwards;
   display:flex;flex-direction:column;align-items:center;
+  overflow:visible;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .login-logo-img{width:170px;height:auto;margin-bottom:0;}
@@ -313,7 +314,7 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
   position:absolute;top:calc(100% + 3px);left:0;right:0;
   background:#fff;border:1.5px solid var(--teal);border-radius:8px;
   max-height:200px;overflow-y:auto;z-index:100;
-  box-shadow:0 8px 24px rgba(27,42,107,0.14);display:none;
+  box-shadow:0 8px 24px rgba(27,42,107,0.14);display:none;z-index:9999;
 }
 .client-dropdown.open{display:block;}
 .client-option{
@@ -440,7 +441,7 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
       </div>
       <input type="text" class="lf-input" id="user-search-input" placeholder="Buscar tu nombre..."
         oninput="filterUsers()" onfocus="openUserDd()" autocomplete="off" style="margin-bottom:0">
-      <div class="client-dropdown" id="user-dd" style="z-index:999"></div>
+      <div class="client-dropdown" id="user-dd" style="z-index:9999;position:absolute;left:0;right:0;top:100%"></div>
     </div>
     <input type="hidden" id="user-select" value="">
     <label class="lf-label">Contraseña</label>
@@ -864,7 +865,13 @@ function renderUserDd(list) {
 
 function openUserDd() {
   const dd = document.getElementById('user-dd');
-  if (dd) { dd.classList.add('open'); if (!dd.innerHTML) renderUserDd(comerciales.slice(0,15)); }
+  if (!dd) return;
+  dd.classList.add('open');
+  // Always render the full list when opening (not filtered yet)
+  const q = (document.getElementById('user-search-input').value || '').toLowerCase().trim();
+  if (!q) {
+    renderUserDd(comerciales.slice(0, 15));
+  }
 }
 function selectUser(id, name) {
   document.getElementById('user-select').value = id;
