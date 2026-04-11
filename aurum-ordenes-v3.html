@@ -1071,6 +1071,8 @@ function renderTable() {
   if (tab==='conv')  cols.push('Moneda Conv.','Fecha Liq.');
   cols.push('Importe','Prioridad','Estado');
   if (isAdmin) cols.push('Comercial');
+  cols.push('');
+  cols.push('');  // actions column
 
   document.getElementById('table-head').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
   const body = document.getElementById('table-body');
@@ -1110,8 +1112,92 @@ function renderTable() {
       <td>${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
+      <td style="white-space:nowrap">
+        ${(isAdmin || (o.solicitadoPor === currentUser.id && o.estado === 'PENDIENTE'))
+          ? `<button onclick="editOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;margin-right:4px;font-family:'Nunito',sans-serif;font-weight:600;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal-dark)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">✏️ Editar</button>
+           <button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🗑 Eliminar</button>`
+          : (o.estado !== 'PENDIENTE' && o.solicitadoPor === currentUser.id && !isAdmin
+            ? `<span style="font-size:11px;color:var(--text-muted);font-style:italic">🔒 Pedir al admin</span>`
+            : '')
+        }
+      </td>
     </tr>`;
   }).join('');
+}
+
+function deleteOrder(id) {
+  if (!confirm('¿Eliminás esta orden?')) return;
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  // Check permission
+  if (!currentUser.isAdmin && (o.solicitadoPor !== currentUser.id || o.estado !== 'PENDIENTE')) {
+    showToast('⚠ No tenés permiso para eliminar esta orden');
+    return;
+  }
+  // Delete from Firebase
+  if (o.fbKey) {
+    window.__db.ref('ordenes/' + o.fbKey).remove().then(() => {
+      showToast('✓ Orden eliminada');
+    }).catch(e => {
+      orders = orders.filter(x=>x.id!==id);
+      renderTable();
+      showToast('✓ Orden eliminada');
+    });
+  } else {
+    orders = orders.filter(x=>x.id!==id);
+    renderTable();
+    showToast('✓ Orden eliminada');
+  }
+}
+
+function editOrder(id) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  // Check permission
+  if (!currentUser.isAdmin && (o.solicitadoPor !== currentUser.id || o.estado !== 'PENDIENTE')) {
+    showToast('⚠ No tenés permiso para editar esta orden');
+    return;
+  }
+  // Set current view tab
+  const tabMap = {fci:'fci-hoy', pagos:'pagos-hoy', conv:'conv-hoy'};
+  if (currentView !== tabMap[o.tab]) showView(tabMap[o.tab]);
+
+  // Pre-fill modal
+  selectedClient = {comitente: o.comitente, nombre: o.cliente};
+  document.getElementById('client-sel-text').textContent = o.comitente + ' · ' + o.cliente;
+  document.getElementById('client-sel-display').style.display = 'flex';
+  document.getElementById('client-modal-search').style.display = 'none';
+
+  const tipoSel = document.getElementById('f-tipo');
+  tipoSel.value = o.tipo;
+  document.getElementById('f-prioridad').value = o.prioridad || '';
+  document.getElementById('f-comentarios').value = o.comentarios || '';
+
+  if (o.tab === 'fci') {
+    document.getElementById('f-fondo').value = o.fondo || '';
+    document.getElementById('f-importe-fci').value = o.importe || '';
+    document.getElementById('f-fecha-fci').value = o.fecha || '';
+  } else if (o.tab === 'pagos') {
+    populateBankSelect();
+    setTimeout(() => {
+      selectBanco(o.banco || '');
+      document.getElementById('f-moneda-pago').value = o.moneda || '';
+    }, 100);
+    document.getElementById('f-importe-pago').value = o.importe || '';
+    document.getElementById('f-fecha-pago').value = o.fecha || '';
+  } else if (o.tab === 'conv') {
+    document.getElementById('f-importe-conv').value = o.importe || '';
+    document.getElementById('f-moneda-conv').value = o.monedaConv || '';
+    document.getElementById('f-fecha-liq').value = o.fechaLiq || '';
+    document.getElementById('f-fecha-conv').value = o.fecha || '';
+  }
+
+  // Mark as editing
+  window._editingOrderId = id;
+  window._editingOrderFbKey = o.fbKey;
+  document.getElementById('modal-title').textContent = '✏️ Editando Orden ' + id;
+  document.querySelector('.btn-submit').textContent = 'Guardar Cambios';
+  document.getElementById('modal').classList.add('open');
 }
 
 function updateStatus(id, val) {
@@ -1238,6 +1324,10 @@ function openModal() {
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
   document.getElementById('client-dd').classList.remove('open');
+  window._editingOrderId = null;
+  window._editingOrderFbKey = null;
+  const btn = document.querySelector('.btn-submit');
+  if (btn) btn.textContent = 'Enviar Orden';
 }
 
 // Client search
