@@ -846,20 +846,22 @@ function filterUsers() {
   renderUserDd(results);
 }
 function renderUserDd(list) {
-  const dd = document.getElementById('user-dd');
+  var dd = document.getElementById('user-dd');
   if (!dd) return;
   if (!list.length) {
     dd.innerHTML = '<div class="client-option" style="color:#8590B8">Sin resultados</div>';
     return;
   }
-  let out = '';
-  for (let i = 0; i < list.length; i++) {
-    const c = list[i];
-    const adminTag = c.isAdmin ? '<span style="color:#1E9E91;font-size:10px;margin-right:4px">🔒 ADMIN</span>' : '';
-    out += '<div class="client-option" onclick="selectUser('' + c.id + '','' + c.name.replace(/'/g, '') + '')">' + adminTag + c.name + '</div>';
-  }
-  dd.innerHTML = out;
+  dd.innerHTML = '';
+  list.forEach(function(c) {
+    var div = document.createElement('div');
+    div.className = 'client-option';
+    div.innerHTML = (c.isAdmin ? '<span style="color:#1E9E91;font-size:10px;margin-right:4px">🔒 ADMIN</span>' : '') + c.name;
+    div.addEventListener('click', function() { selectUser(c.id, c.name); });
+    dd.appendChild(div);
+  });
 }
+
 function openUserDd() {
   const dd = document.getElementById('user-dd');
   if (dd) { dd.classList.add('open'); if (!dd.innerHTML) renderUserDd(comerciales.slice(0,15)); }
