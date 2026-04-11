@@ -98,25 +98,27 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-body)
 /* SIDEBAR */
 .sidebar{
   width:220px;min-height:100vh;flex-shrink:0;
-  background:linear-gradient(180deg,var(--navy-dark) 0%,var(--navy) 100%);
+  background:#FFFFFF;
+  border-right:1px solid var(--border);
   display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+  box-shadow:2px 0 12px rgba(27,42,107,0.06);
 }
 .sidebar-logo{
-  padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.08);
-  display:flex;flex-direction:column;align-items:center;
+  padding:20px 16px 16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:center;align-items:center;
 }
-.sidebar-logo img{width:110px;height:auto;}
+.sidebar-logo img{width:120px;height:auto;}
 .sidebar-nav{padding:12px 10px;flex:1;}
-.nav-section-label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);padding:0 8px;margin:14px 0 5px;}
+.nav-section-label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);padding:0 8px;margin:14px 0 5px;}
 .nav-item{
   display:flex;align-items:center;gap:9px;padding:9px 11px;
-  border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.6);
+  border-radius:8px;cursor:pointer;color:var(--text-muted);
   font-size:13px;font-weight:600;transition:all 0.18s;margin-bottom:2px;user-select:none;
 }
-.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
-.nav-item.active{background:rgba(43,191,176,0.18);color:var(--teal-light);}
+.nav-item:hover{background:var(--surface2);color:var(--navy);}
+.nav-item.active{background:rgba(43,191,176,0.12);color:var(--teal-dark);font-weight:700;}
 .nav-icon{font-size:15px;flex-shrink:0;}
-.sidebar-footer{padding:12px 10px;border-top:1px solid rgba(255,255,255,0.08);}
+.sidebar-footer{padding:12px 10px;border-top:1px solid var(--border);}
 .user-info{display:flex;align-items:center;gap:9px;padding:7px 8px;margin-bottom:6px;}
 .user-avatar{
   width:30px;height:30px;border-radius:50%;flex-shrink:0;
@@ -124,14 +126,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-body)
   font-size:12px;font-weight:700;color:#fff;
   background:linear-gradient(135deg,var(--teal) 0%,var(--navy-light) 100%);
 }
-.user-name{font-size:12px;font-weight:700;color:#fff;line-height:1.3;}
-.user-role{font-size:10px;color:rgba(255,255,255,0.4);font-weight:500;}
+.user-name{font-size:12px;font-weight:700;color:var(--navy);line-height:1.3;}
+.user-role{font-size:10px;color:var(--text-muted);font-weight:500;}
 .logout-btn{
-  width:100%;background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.5);
+  width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text-muted);
   padding:7px;border-radius:6px;font-family:'Nunito',sans-serif;font-size:11px;
   font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;
 }
-.logout-btn:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.logout-btn:hover{background:var(--border);color:var(--navy);}
 
 /* MAIN */
 .main-area{flex:1;min-width:0;display:flex;flex-direction:column;}
@@ -434,7 +436,15 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
     <div class="login-hint">Seleccioná tu perfil para continuar</div>
     <div class="login-err" id="login-err"></div>
     <label class="lf-label">Usuario</label>
-    <select class="lf-select" id="user-select"></select>
+    <div style="position:relative;width:100%;margin-bottom:16px">
+      <div id="user-sel-display" style="display:none" class="client-selected-tag" onclick="clearUserSel()" style="margin-bottom:0">
+        <span id="user-sel-text">—</span><span class="client-clear">✕</span>
+      </div>
+      <input type="text" class="lf-input" id="user-search-input" placeholder="Buscar nombre..."
+        oninput="filterUsers()" onfocus="openUserDd()" autocomplete="off" style="margin-bottom:0">
+      <div class="client-dropdown" id="user-dd" style="z-index:999"></div>
+    </div>
+    <input type="hidden" id="user-select" value="">
     <label class="lf-label">Contraseña</label>
     <input class="lf-input" type="password" id="pw-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()" style="margin-top:4px">Ingresar al sistema</button>
@@ -742,17 +752,36 @@ let passwords = {};
 let firstLogin = {};  // {userId: true} if never changed password
 
 let comerciales = [
-  {id:'admin',    name:'Administrador', isAdmin:true},
-  {id:'alejandro',name:'Alejandro Le Gentil', isAdmin:false},
-  {id:'fernando', name:'Fernando Calatayud', isAdmin:false},
-  {id:'macri',    name:'Macri Antonio', isAdmin:false},
-  {id:'felipe',   name:'Felipe Meglioli', isAdmin:false},
-  {id:'joaquin',  name:'Joaquín Roy', isAdmin:false},
-  {id:'luis',     name:'Luis Falco', isAdmin:false},
-  {id:'manuel',   name:'Manuel Barchi Bullo', isAdmin:false},
-  {id:'martin',   name:'Martín Huergo', isAdmin:false},
-  {id:'martin_t', name:'Martín Thierbach', isAdmin:false},
-  {id:'norman',   name:'Norman Aguilera', isAdmin:false},
+  // ADMINS
+  {id:'cristobal', name:'Cristobal Thury Oneto', isAdmin:true},
+  {id:'gonzalo',   name:'Gonzalo Romero', isAdmin:true},
+  {id:'leticia',   name:'Leticia Da Cunha', isAdmin:true},
+  {id:'victoria',  name:'Victoria Martinez Asensio', isAdmin:true},
+  {id:'martin_r',  name:'Martin Rabbiosi', isAdmin:true},
+  // COMERCIALES
+  {id:'agustin',    name:'Agustín Nuñez', isAdmin:false},
+  {id:'alejandro',  name:'Alejandro Le Gentil', isAdmin:false},
+  {id:'clara',      name:'Clara Vidou', isAdmin:false},
+  {id:'enrique',    name:'Enrique Lopez Alcala', isAdmin:false},
+  {id:'fernando',   name:'Fernando Calatayud', isAdmin:false},
+  {id:'gaston',     name:'Gaston Masci', isAdmin:false},
+  {id:'gianfranco', name:'Gian Franco Dimsenvicius', isAdmin:false},
+  {id:'guido',      name:'Guido Panighetti', isAdmin:false},
+  {id:'jose',       name:'Jose Caldeyro Hughes', isAdmin:false},
+  {id:'julian',     name:'Julian Ruarte', isAdmin:false},
+  {id:'julieta',    name:'Julieta Caceres', isAdmin:false},
+  {id:'luis',       name:'Luis U. Falco', isAdmin:false},
+  {id:'mariano',    name:'Mariano Lopez Gaffney', isAdmin:false},
+  {id:'martin_t',   name:'Martin Thierbach', isAdmin:false},
+  {id:'martin_h',   name:'Martín Huergo', isAdmin:false},
+  {id:'matias',     name:'Matias Fernandez', isAdmin:false},
+  {id:'micaela',    name:'Micaela Amendola', isAdmin:false},
+  {id:'pablo',      name:'Pablo Repetto', isAdmin:false},
+  {id:'ramiro',     name:'Ramiro Terefelski', isAdmin:false},
+  {id:'roman',      name:'Roman Mocias', isAdmin:false},
+  {id:'santiago',   name:'Santiago Repetto', isAdmin:false},
+  {id:'silvana',    name:'Silvana De Nicola', isAdmin:false},
+  {id:'sofia',      name:'Sofia Bugdadi', isAdmin:false},
 ];
 
 // Init passwords: default = userId (or 'admin' for admin)
@@ -814,13 +843,50 @@ function fmtImporteConv(input) {
 //  LOGIN
 // ═══════════════════════════════════════════════════
 function buildLoginSelect() {
-  const sel = document.getElementById('user-select');
-  sel.innerHTML = '<option value="">— Seleccioná un usuario —</option>';
-  comerciales.forEach(c => {
-    sel.innerHTML += `<option value="${c.id}">${c.isAdmin ? '🔒 ' : ''}${c.name}</option>`;
-  });
+  // Now handled by searchable dropdown
 }
 buildLoginSelect();
+
+// User search for login
+function filterUsers() {
+  openUserDd();
+  const q = document.getElementById('user-search-input').value.toLowerCase().trim();
+  const results = comerciales.filter(c => !q || c.name.toLowerCase().includes(q) || c.id.includes(q)).slice(0,15);
+  renderUserDd(results);
+}
+function renderUserDd(list) {
+  const dd = document.getElementById('user-dd');
+  if (!list.length) { dd.innerHTML='<div class="client-option" style="color:var(--text-muted)">Sin resultados</div>'; return; }
+  dd.innerHTML = list.map(c=>`<div class="client-option" onclick="selectUser('${c.id}','${c.name.replace(/'/g,"\'")}')">
+    ${c.isAdmin ? '<span style="color:var(--teal-dark);font-size:10px;margin-right:4px">🔒 ADMIN</span>' : ''}${c.name}
+  </div>`).join('');
+}
+function openUserDd() {
+  const dd = document.getElementById('user-dd');
+  dd.classList.add('open');
+  if (!dd.innerHTML) renderUserDd(comerciales.slice(0,15));
+}
+function selectUser(id, name) {
+  document.getElementById('user-select').value = id;
+  document.getElementById('user-sel-text').textContent = name;
+  document.getElementById('user-sel-display').style.display = 'flex';
+  document.getElementById('user-search-input').style.display = 'none';
+  document.getElementById('user-dd').classList.remove('open');
+  document.getElementById('pw-input').focus();
+}
+function clearUserSel() {
+  document.getElementById('user-select').value = '';
+  document.getElementById('user-sel-display').style.display = 'none';
+  document.getElementById('user-search-input').style.display = 'block';
+  document.getElementById('user-search-input').value = '';
+  document.getElementById('user-search-input').focus();
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#user-dd') && !e.target.closest('#user-search-input')) {
+    const dd = document.getElementById('user-dd');
+    if(dd) dd.classList.remove('open');
+  }
+});
 
 function doLogin() {
   const uid = document.getElementById('user-select').value;
@@ -846,8 +912,10 @@ function saveNewPassword() {
   const err = document.getElementById('chpw-err');
   if (!p1 || p1.length < 4) { err.textContent = 'Mínimo 4 caracteres'; return; }
   if (p1 !== p2) { err.textContent = 'Las contraseñas no coinciden'; return; }
-  passwords[currentUser.id] = btoa(p1);
+  var hashed = btoa(p1);
+  passwords[currentUser.id] = hashed;
   firstLogin[currentUser.id] = false;
+  savePasswordToFirebase(currentUser.id, hashed, false);
   document.getElementById('chpw-modal').classList.remove('open');
   launchApp();
 }
@@ -1304,8 +1372,10 @@ function resetPassword(uid) {
   const inp = document.getElementById('pw-reset-'+uid);
   const newPw = inp.value.trim();
   if (!newPw || newPw.length < 3) { showToast('⚠ Ingresá una contraseña válida'); return; }
-  passwords[uid] = btoa(newPw);
+  var hashed = btoa(newPw);
+  passwords[uid] = hashed;
   firstLogin[uid] = true;
+  savePasswordToFirebase(uid, hashed, true);
   inp.value = '';
   showToast('✓ Contraseña reseteada para '+comerciales.find(c=>c.id===uid)?.name);
 }
@@ -1445,6 +1515,8 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 window.__db = firebase.database();
+// Init passwords from Firebase
+initPasswords();
 
 // Subscribe to realtime updates once Firebase is ready
 window.__db.ref('ordenes').on('value', function(snapshot) {
