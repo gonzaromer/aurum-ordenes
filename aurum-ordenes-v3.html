@@ -1047,16 +1047,17 @@ function getBtns(o) {
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
   if (currentUser.isAdmin) return eBtn+dBtn;
-  if (o.solicitadoPor===currentUser.id && o.estado==='PENDIENTE') return eBtn+dBtn;
-  if (o.solicitadoPor===currentUser.id) return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
-  return '';
+  // Comercial only sees their own orders, so just check estado
+  if (o.estado==='PENDIENTE') return eBtn+dBtn;
+  return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
 
 function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
   const o = orders.find(x=>x.id===id);
   if (!o) return;
-  if (!currentUser.isAdmin && (o.solicitadoPor!==currentUser.id || o.estado!=='PENDIENTE')) { showToast('Sin permiso'); return; }
+  // Comercial can only edit PENDIENTE orders (they only see their own)
+  if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   if (o.fbKey) { window.__db.ref('ordenes/'+o.fbKey).remove().then(()=>showToast('Orden eliminada')); }
   else { orders=orders.filter(x=>x.id!==id); renderTable(); showToast('Orden eliminada'); }
 }
@@ -1064,7 +1065,8 @@ function deleteOrder(id) {
 function editOrder(id) {
   const o = orders.find(x=>x.id===id);
   if (!o) return;
-  if (!currentUser.isAdmin && (o.solicitadoPor!==currentUser.id || o.estado!=='PENDIENTE')) { showToast('Sin permiso'); return; }
+  // Comercial can only edit PENDIENTE orders (they only see their own)
+  if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
