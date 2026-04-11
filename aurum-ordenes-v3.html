@@ -848,9 +848,17 @@ function filterUsers() {
 function renderUserDd(list) {
   const dd = document.getElementById('user-dd');
   if (!dd) return;
-  if (!list.length) { dd.innerHTML='<div class="client-option" style="color:var(--text-muted)">Sin resultados</div>'; return; }
-  dd.innerHTML = list.map(c=>'<div class="client-option" onclick="selectUser(\''+c.id+'\',\''+c.name.replace(/\'/g,\'\\\'\')+'\')">'+
-    (c.isAdmin ? '<span style="color:var(--teal-dark);font-size:10px;margin-right:4px">🔒 ADMIN</span>' : '')+c.name+'</div>').join('');
+  if (!list.length) {
+    dd.innerHTML = '<div class="client-option" style="color:#8590B8">Sin resultados</div>';
+    return;
+  }
+  let out = '';
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    const adminTag = c.isAdmin ? '<span style="color:#1E9E91;font-size:10px;margin-right:4px">🔒 ADMIN</span>' : '';
+    out += '<div class="client-option" onclick="selectUser('' + c.id + '','' + c.name.replace(/'/g, '') + '')">' + adminTag + c.name + '</div>';
+  }
+  dd.innerHTML = out;
 }
 function openUserDd() {
   const dd = document.getElementById('user-dd');
