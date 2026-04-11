@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AURUM VALORES — Sistema de Órdenes</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -660,7 +661,15 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Banco *</label>
-            <select class="form-select" id="f-banco"><option value="">— Seleccioná —</option></select>
+            <div class="client-search-wrap" id="banco-wrap">
+              <div id="banco-sel-display" style="display:none" class="client-selected-tag" onclick="clearBancoSel()">
+                <span id="banco-sel-text">—</span><span class="client-clear">✕</span>
+              </div>
+              <input type="text" class="client-search-input" id="banco-search-input"
+                placeholder="Buscar banco..."
+                oninput="filterBancos()" onfocus="openBancoDd()" autocomplete="off">
+              <div class="client-dropdown" id="banco-dd"></div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Moneda *</label>
@@ -773,18 +782,8 @@ let banks = [
 ];
 
 // Sample orders
-const sampleOrders = [
-  {id:'FCI-001',tab:'fci',tipo:'SUSCRIPCION',comitente:'12515',cliente:'ROMERO GONZALO DAMIAN',solicitadoPor:'alejandro',estado:'EJECUTADO',prioridad:'ALTO',fecha:TODAY,comentarios:'',importe:'250.000,00',fondo:'Schroder Renta Fija',moneda:''},
-  {id:'FCI-002',tab:'fci',tipo:'RESCATE',comitente:'209',cliente:'MACRI ANTONIO AUGUSTO',solicitadoPor:'fernando',estado:'EN PROCESO',prioridad:'MEDIO',fecha:TODAY,comentarios:'',importe:'100.000,00',fondo:'Balanz Capital',moneda:''},
-  {id:'PAG-001',tab:'pagos',tipo:'PAGO',comitente:'2108',cliente:'DE NARDI FLORENCIA',solicitadoPor:'manuel',estado:'PENDIENTE',prioridad:'ALTO',fecha:TODAY,comentarios:'',importe:'15.000,00',banco:'Banco Galicia',moneda:'MEP'},
-  {id:'PAG-002',tab:'pagos',tipo:'PAGO',comitente:'2090',cliente:'LUDUEÑA MARIA BELEN',solicitadoPor:'martin',estado:'EJECUTADO',prioridad:'MEDIO',fecha:TODAY,comentarios:'',importe:'800.000,00',banco:'Banco Nación Argentina',moneda:'ARS'},
-  {id:'CON-001',tab:'conv',tipo:'CONVERSION',comitente:'1938',cliente:'MACRI JORGE',solicitadoPor:'alejandro',estado:'PENDIENTE',prioridad:'ALTO',fecha:TODAY,comentarios:'',importe:'500.000,00',monedaConv:'MEP',fechaLiq:TODAY},
-  // some historical
-  {id:'FCI-H01',tab:'fci',tipo:'SUSCRIPCION',comitente:'3048',cliente:'MACRI JOSE MARIANO',solicitadoPor:'macri',estado:'EJECUTADO',prioridad:'BAJO',fecha:'2024-03-15',comentarios:'',importe:'320.000,00',fondo:'Premier Renta',moneda:''},
-  {id:'PAG-H01',tab:'pagos',tipo:'PAGO',comitente:'206',cliente:'GERBER COMBA ANA MARIA',solicitadoPor:'norman',estado:'EJECUTADO',prioridad:'BAJO',fecha:'2024-03-16',comentarios:'',importe:'5.000,00',banco:'Banco Macro',moneda:'CABLE'},
-];
-
-let orders = [...sampleOrders];
+// No sample orders - all data comes from Firebase
+let orders = [];
 let orderCounter = 1000;
 let currentUser = null;
 let currentView = 'fci-hoy';
@@ -864,6 +863,7 @@ function launchApp() {
     document.getElementById('stats-section').style.display = 'grid';
     populateHistComercial();
   }
+  // Firebase listener is initialized at bottom of page
   showView('fci-hoy');
 }
 
@@ -1027,7 +1027,17 @@ function renderTable() {
 
 function updateStatus(id, val) {
   const o = orders.find(x=>x.id===id);
-  if (o) { o.estado=val; showToast('✓ Estado → "'+val+'"'); renderTable(); }
+  if (o) {
+    o.estado = val;
+    // Update in Firebase if available
+    try {
+      if (o.fbKey) {
+        __db.ref('ordenes/' + o.fbKey).update({ estado: val });
+      }
+    } catch(e) {}
+    showToast('✓ Estado → "'+val+'"');
+    renderTable();
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1118,6 +1128,14 @@ function openModal() {
   document.getElementById('client-modal-search').style.display = 'block';
   document.getElementById('client-sel-display').style.display = 'none';
   document.getElementById('client-dd').classList.remove('open');
+  // reset banco search
+  selectedBanco = null;
+  const bsd = document.getElementById('banco-sel-display');
+  const bsi = document.getElementById('banco-search-input');
+  if(bsd){ bsd.style.display='none'; }
+  if(bsi){ bsi.style.display='block'; bsi.value=''; }
+  const bdd = document.getElementById('banco-dd');
+  if(bdd){ bdd.innerHTML=''; bdd.classList.remove('open'); }
   document.getElementById('f-comentarios').value = '';
   document.getElementById('f-prioridad').value = '';
   ['f-fondo','f-importe-fci','f-importe-pago','f-importe-conv'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';} );
@@ -1166,13 +1184,42 @@ function clearClientSel() {
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('.client-search-wrap')) document.getElementById('client-dd').classList.remove('open');
+  if (!e.target.closest('#banco-wrap')) { const bdd=document.getElementById('banco-dd'); if(bdd) bdd.classList.remove('open'); }
 });
 
-function populateBankSelect() {
-  const sel = document.getElementById('f-banco');
-  sel.innerHTML = '<option value="">— Seleccioná banco —</option>';
-  [...banks].sort((a,b)=>a.localeCompare(b)).forEach(b => sel.innerHTML += `<option>${b}</option>`);
+let selectedBanco = null;
+
+function filterBancos() {
+  openBancoDd();
+  const q = document.getElementById('banco-search-input').value.toLowerCase().trim();
+  const results = [...banks].sort((a,b)=>a.localeCompare(b)).filter(b => !q || b.toLowerCase().includes(q)).slice(0,20);
+  renderBancoDd(results);
 }
+function renderBancoDd(list) {
+  const dd = document.getElementById('banco-dd');
+  if (!list.length) { dd.innerHTML='<div class="client-option" style="color:var(--text-muted)">Sin resultados</div>'; return; }
+  dd.innerHTML = list.map(b=>`<div class="client-option" onclick="selectBanco('${b.replace(/'/g,"\'")}')">${b}</div>`).join('');
+}
+function openBancoDd() {
+  const dd = document.getElementById('banco-dd');
+  dd.classList.add('open');
+  if (!dd.innerHTML) renderBancoDd([...banks].sort((a,b)=>a.localeCompare(b)).slice(0,20));
+}
+function selectBanco(name) {
+  selectedBanco = name;
+  document.getElementById('banco-sel-text').textContent = name;
+  document.getElementById('banco-sel-display').style.display = 'flex';
+  document.getElementById('banco-search-input').style.display = 'none';
+  document.getElementById('banco-dd').classList.remove('open');
+}
+function clearBancoSel() {
+  selectedBanco = null;
+  document.getElementById('banco-sel-display').style.display = 'none';
+  document.getElementById('banco-search-input').style.display = 'block';
+  document.getElementById('banco-search-input').value = '';
+  document.getElementById('banco-search-input').focus();
+}
+function populateBankSelect() { /* now handled by searchable banco */ }
 
 function submitOrder() {
   const tipo = document.getElementById('f-tipo').value;
@@ -1201,7 +1248,7 @@ function submitOrder() {
            : tab==='pagos' ? document.getElementById('f-importe-pago').value
            : document.getElementById('f-importe-conv').value,
     fondo:     document.getElementById('f-fondo')?.value||'',
-    banco:     document.getElementById('f-banco')?.value||'',
+    banco:     selectedBanco||'',
     moneda:    document.getElementById('f-moneda-pago')?.value||'',
     monedaConv:document.getElementById('f-moneda-conv')?.value||'',
     fechaLiq:  document.getElementById('f-fecha-liq')?.value||'',
@@ -1210,10 +1257,23 @@ function submitOrder() {
   if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
   if (tab==='conv'  && !newOrder.monedaConv) { showToast('⚠ Seleccioná la moneda de conversión'); return; }
 
-  orders.unshift(newOrder);
+  // Save to Firebase Realtime Database
+  try {
+    __db.ref('ordenes').push(newOrder).then(() => {
+      showToast('✓ Orden '+id+' enviada correctamente');
+    }).catch(err => {
+      console.error('Firebase error:', err);
+      orders.unshift(newOrder);
+      renderTable();
+      showToast('✓ Orden '+id+' guardada (modo local)');
+    });
+  } catch(e) {
+    console.error('Firebase catch:', e);
+    orders.unshift(newOrder);
+    renderTable();
+    showToast('✓ Orden '+id+' enviada correctamente');
+  }
   closeModal();
-  renderTable();
-  showToast('✓ Orden '+id+' enviada correctamente');
 }
 
 // ═══════════════════════════════════════════════════
@@ -1368,6 +1428,49 @@ function showToast(msg) {
 // Init hist dates
 document.getElementById('hist-from').value = new Date(Date.now()-30*86400000).toISOString().split('T')[0];
 document.getElementById('hist-to').value = TODAY;
+</script>
+
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyBwTboXW9CC0JidmkN97V0FQzzJQ9fRhvg",
+  authDomain: "aurum-ordenes.firebaseapp.com",
+  databaseURL: "https://aurum-ordenes-default-rtdb.firebaseio.com",
+  projectId: "aurum-ordenes",
+  storageBucket: "aurum-ordenes.firebasestorage.app",
+  messagingSenderId: "87106654494",
+  appId: "1:87106654494:web:c73b4944dbd44b1b09b90f"
+};
+firebase.initializeApp(firebaseConfig);
+window.__db = firebase.database();
+
+// Subscribe to realtime updates once Firebase is ready
+window.__db.ref('ordenes').on('value', function(snapshot) {
+  var data = snapshot.val();
+  if (data) {
+    orders = Object.entries(data).map(function(entry) {
+      return Object.assign({}, entry[1], {fbKey: entry[0]});
+    });
+  } else {
+    orders = [];
+  }
+  if (typeof renderTable === 'function' && currentUser) {
+    renderTable();
+    if (currentView === 'historial') renderHistorial();
+    if (currentUser.isAdmin) {
+      var todayAll = orders.filter(function(o){ return o.fecha === TODAY; });
+      var el = document.getElementById('st-total');
+      if(el) {
+        document.getElementById('st-total').textContent = todayAll.length;
+        document.getElementById('st-pend').textContent  = todayAll.filter(function(o){return o.estado==='PENDIENTE';}).length;
+        document.getElementById('st-proc').textContent  = todayAll.filter(function(o){return o.estado==='EN PROCESO';}).length;
+        document.getElementById('st-exec').textContent  = todayAll.filter(function(o){return o.estado==='EJECUTADO';}).length;
+      }
+    }
+  }
+});
 </script>
 </body>
 </html>
