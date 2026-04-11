@@ -1042,7 +1042,7 @@ function savePasswordToFirebase(uid, hashedPw, isFirst) {
 }
 
 function getBtns(o) {
-  var s = 'background:none;border:1.5px solid #DDE3F0;color:#8590B8;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:3px';
+  var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:4px';
   var eid = o.id;
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
@@ -1162,7 +1162,7 @@ function renderTable() {
       <td>${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
-      <td>${getBtns(o)}</td>
+      <td style="min-width:160px;white-space:nowrap">${getBtns(o)}</td>
     </tr>`;
   }).join('');
 }
