@@ -837,8 +837,6 @@ function fmtImporteConv(input) {
 // ═══════════════════════════════════════════════════
 //  LOGIN
 // ═══════════════════════════════════════════════════
-function buildLoginSelect() {}
-buildLoginSelect();
 
 function filterUsers() {
   const dd = document.getElementById('user-dd');
@@ -878,6 +876,10 @@ function clearUserSel() {
   document.getElementById('user-search-input').value = '';
   document.getElementById('user-search-input').focus();
 }
+
+
+function buildLoginSelect() {}
+buildLoginSelect();
 
 function doLogin() {
   const uid = (document.getElementById('user-select').value || '').trim();
