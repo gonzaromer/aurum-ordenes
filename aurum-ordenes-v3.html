@@ -1071,7 +1071,6 @@ function renderTable() {
   if (tab==='conv')  cols.push('Moneda Conv.','Fecha Liq.');
   cols.push('Importe','Prioridad','Estado');
   if (isAdmin) cols.push('Comercial');
-  cols.push('');
   cols.push('');  // actions column
 
   document.getElementById('table-head').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
@@ -1113,12 +1112,16 @@ function renderTable() {
       ${statusCell}
       ${comercialCol}
       <td style="white-space:nowrap">
-        ${(isAdmin || (o.solicitadoPor === currentUser.id && o.estado === 'PENDIENTE'))
+        ${isAdmin
           ? `<button onclick="editOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;margin-right:4px;font-family:'Nunito',sans-serif;font-weight:600;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal-dark)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">✏️ Editar</button>
-           <button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🗑 Eliminar</button>`
-          : (o.estado !== 'PENDIENTE' && o.solicitadoPor === currentUser.id && !isAdmin
-            ? `<span style="font-size:11px;color:var(--text-muted);font-style:italic">🔒 Pedir al admin</span>`
-            : '')
+             <button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🗑 Eliminar</button>`
+          : (o.solicitadoPor === currentUser.id && o.estado === 'PENDIENTE'
+            ? `<button onclick="editOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;margin-right:4px;font-family:'Nunito',sans-serif;font-weight:600;">✏️ Editar</button>
+               <button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:600;">🗑 Eliminar</button>`
+            : (o.solicitadoPor === currentUser.id && o.estado !== 'PENDIENTE'
+              ? `<span style="font-size:11px;color:var(--text-muted);font-style:italic">🔒 Pedir al admin</span>`
+              : '')
+          )
         }
       </td>
     </tr>`;
