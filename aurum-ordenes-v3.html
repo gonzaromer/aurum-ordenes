@@ -1449,7 +1449,7 @@ function renderTable() {
   if (tab==='senebi') cols.push('Cte. Compra','Cte. Venta','Ticker','Plazo','Moneda','P. Mesa','P. Cliente','Nominales','Monto');
   if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
   cols.push('Prioridad','Estado');
-  if (isAdmin) cols.push('Comercial');
+  if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
   cols.push('');
 
   const tw = document.getElementById('main-table-wrap');
@@ -1482,7 +1482,9 @@ function renderTable() {
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
 
-    const comercialCol = isAdmin ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
+    // Show comercial column for admin AND superComercial
+    const showComercialCol = currentUser.isAdmin || isSuperComercial();
+    const comercialCol = showComercialCol ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
 
     return `<tr>
       <td class="id-mono">${o.id}</td>
@@ -1562,7 +1564,7 @@ function renderHistorial() {
 
   const isAdmin = currentUser.isAdmin;
   const cols = ['ID','Fecha','Tipo','Comitente','Cliente','Detalle','Importe','Estado'];
-  if (isAdmin) cols.push('Comercial');
+  if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
 
   document.getElementById('hist-head').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
   const body = document.getElementById('hist-body');
