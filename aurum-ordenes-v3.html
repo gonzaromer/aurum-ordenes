@@ -1265,10 +1265,12 @@ function getTodayOrders() {
   const tab = getTabName(currentView);
   let rows = orders.filter(o => o.tab === tab && o.fecha === TODAY);
   if (!currentUser.isAdmin) {
-    console.log('Filtering for user:', currentUser.id, 'Total orders:', rows.length);
-    rows.forEach(function(o) { console.log('Order:', o.id, 'solicitadoPor:', o.solicitadoPor); });
-    rows = rows.filter(o => o.solicitadoPor === currentUser.id);
-    console.log('After filter:', rows.length);
+    if (isSuperComercial()) {
+      // Gaston/Julian see their own orders AND orders they created for others
+      rows = rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
+    } else {
+      rows = rows.filter(o => o.solicitadoPor === currentUser.id);
+    }
   }
   if (currentFilter !== 'all') rows = rows.filter(o => o.estado === currentFilter);
   return rows;
@@ -1535,7 +1537,13 @@ function renderHistorial() {
   const comercial= document.getElementById('hist-comercial').value;
 
   let rows = [...orders];
-  if (!currentUser.isAdmin) rows = rows.filter(o => o.solicitadoPor === currentUser.id);
+  if (!currentUser.isAdmin) {
+    if (isSuperComercial()) {
+      rows = rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
+    } else {
+      rows = rows.filter(o => o.solicitadoPor === currentUser.id);
+    }
+  }
   if (from)     rows = rows.filter(o => o.fecha >= from);
   if (to)       rows = rows.filter(o => o.fecha <= to);
   if (tipo)     rows = rows.filter(o => {
@@ -1726,6 +1734,7 @@ function submitOrder() {
     solicitadoPor: (canAssignComercial() && document.getElementById('f-asignar-comercial')?.value)
                    ? document.getElementById('f-asignar-comercial').value
                    : currentUser.id,
+    creadaPor: currentUser.id,
     estado: 'PENDIENTE',
     prioridad: document.getElementById('f-prioridad').value || 'MEDIO',
     fecha: fecha || TODAY,
