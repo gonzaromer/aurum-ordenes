@@ -235,6 +235,8 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
 .t-rescate{background:rgba(230,168,23,0.10);color:#B8820A;}
 .t-pago{background:rgba(39,174,122,0.10);color:#1E8B5F;}
 .t-conversion{background:rgba(155,76,226,0.10);color:#7B35C4;}
+.t-licitacion{background:rgba(230,90,30,0.10);color:#C45A10;}
+.t-senebi{background:rgba(30,150,100,0.10);color:#1A7A55;}
 
 .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
@@ -478,6 +480,8 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
         <div class="nav-item active" onclick="showView('fci-hoy')" id="nav-fci-hoy"><span class="nav-icon">📊</span>FCI</div>
         <div class="nav-item" onclick="showView('pagos-hoy')" id="nav-pagos-hoy"><span class="nav-icon">💸</span>Pagos</div>
         <div class="nav-item" onclick="showView('conv-hoy')" id="nav-conv-hoy"><span class="nav-icon">🔄</span>Conversiones</div>
+        <div class="nav-item" onclick="showView('lic-hoy')" id="nav-lic-hoy"><span class="nav-icon">🏦</span>Licitaciones</div>
+        <div class="nav-item" onclick="showView('senebi-hoy')" id="nav-senebi-hoy"><span class="nav-icon">📈</span>SENEBI</div>
         <div class="nav-section-label">Historial</div>
         <div class="nav-item" onclick="showView('historial')" id="nav-historial"><span class="nav-icon">📋</span>Acumulado</div>
         <div id="admin-nav-section" style="display:none">
@@ -538,7 +542,7 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
             <input class="filter-input" type="date" id="hist-to" style="width:140px">
             <select class="filter-select" id="hist-tipo" style="width:130px">
               <option value="">Tipo: Todos</option>
-              <option>FCI</option><option>PAGOS</option><option>CONVERSIONES</option>
+              <option>FCI</option><option>PAGOS</option><option>CONVERSIONES</option><option>LICITACIONES</option>
             </select>
             <select class="filter-select" id="hist-estado" style="width:140px">
               <option value="">Estado: Todos</option>
@@ -579,6 +583,25 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
                 <div class="admin-add-row" style="margin-top:10px">
                   <input class="admin-input" id="new-bank" placeholder="Nombre del banco..." onkeydown="if(event.key==='Enter')addBank()">
                   <button class="admin-add-btn" onclick="addBank()">+ Agregar</button>
+                </div>
+              </div>
+            </div>
+            <!-- Fondos FCI -->
+            <div class="admin-card" style="grid-column:1/-1">
+              <div class="admin-card-header">
+                <div class="admin-card-title">📊 Fondos Comunes de Inversión</div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="fondos-count-lbl"></span>
+                  <input type="file" id="excel-fondos-input" accept=".xlsx,.xls,.csv" onchange="importFondosExcel(event)" style="display:none">
+                  <button class="import-btn" onclick="document.getElementById('excel-fondos-input').click()">⬆ Importar Excel</button>
+                </div>
+              </div>
+              <div class="admin-card-body">
+                <input class="admin-input" style="width:100%;margin-bottom:10px" id="fondo-search-admin" placeholder="Buscar fondo..." oninput="renderFondosAdmin()">
+                <div id="fondos-list"></div>
+                <div class="admin-add-row" style="margin-top:10px">
+                  <input class="admin-input" id="new-fondo-name" placeholder="Nombre del fondo..." onkeydown="if(event.key==='Enter')addFondo()">
+                  <button class="admin-add-btn" onclick="addFondo()">+ Agregar</button>
                 </div>
               </div>
             </div>
@@ -650,7 +673,14 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Fondo / FCI</label>
-            <input class="form-input" id="f-fondo" placeholder="Nombre del fondo">
+            <div class="client-search-wrap" id="fondo-wrap">
+              <div id="fondo-sel-display" style="display:none" class="client-selected-tag" onclick="clearFondoSel()">
+                <span id="fondo-sel-text">—</span><span class="client-clear">✕</span>
+              </div>
+              <input type="text" class="client-search-input" id="fondo-search-input"
+                placeholder="Buscar fondo..." oninput="filterFondos()" onfocus="openFondoDd()" autocomplete="off">
+              <div class="client-dropdown" id="fondo-dd"></div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Importe</label>
@@ -670,7 +700,14 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Banco *</label>
-            <select class="form-select" id="f-banco"><option value="">— Seleccioná —</option></select>
+            <div class="client-search-wrap" id="banco-wrap">
+              <div id="banco-sel-display" style="display:none" class="client-selected-tag" onclick="clearBancoSel()">
+                <span id="banco-sel-text">—</span><span class="client-clear">✕</span>
+              </div>
+              <input type="text" class="client-search-input" id="banco-search-input"
+                placeholder="Buscar banco..." oninput="filterBancos()" onfocus="openBancoDd()" autocomplete="off">
+              <div class="client-dropdown" id="banco-dd"></div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Moneda *</label>
@@ -712,6 +749,104 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
           <div class="form-group">
             <label class="form-label">Fecha</label>
             <input class="form-input" id="f-fecha-conv" type="date">
+          </div>
+        </div>
+      </div>
+      <!-- LICITACION fields -->
+      <div id="lic-fields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Denominación Título *</label>
+            <input class="form-input" id="f-denominacion" placeholder="Ej: LECAP S31E6...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio / Tasa Ofertado *</label>
+            <input class="form-input importe-field" id="f-precio-tasa" placeholder="0,00" oninput="fmtImporte(this)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cantidad Ofertada *</label>
+            <input class="form-input importe-field" id="f-cantidad" placeholder="0,00" oninput="fmtImporte(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Moneda Integración *</label>
+            <select class="form-select" id="f-moneda-lic">
+              <option value="">—</option>
+              <option>ARS</option><option>MEP</option><option>CABLE</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- SENEBI fields -->
+      <div id="senebi-fields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Comitente Compra *</label>
+            <div class="client-search-wrap" id="senebi-compra-wrap">
+              <div id="senebi-compra-display" style="display:none" class="client-selected-tag" onclick="clearSenebiCompra()">
+                <span id="senebi-compra-text">—</span><span class="client-clear">✕</span>
+              </div>
+              <input type="text" class="client-search-input" id="senebi-compra-input"
+                placeholder="Buscar comitente compra..." oninput="filterSenebiCompra()" onfocus="openSenebiCompraDd()" autocomplete="off">
+              <div class="client-dropdown" id="senebi-compra-dd"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comitente Venta *</label>
+            <div class="client-search-wrap" id="senebi-venta-wrap">
+              <div id="senebi-venta-display" style="display:none" class="client-selected-tag" onclick="clearSenebiVenta()">
+                <span id="senebi-venta-text">—</span><span class="client-clear">✕</span>
+              </div>
+              <input type="text" class="client-search-input" id="senebi-venta-input"
+                placeholder="Buscar comitente venta..." oninput="filterSenebiVenta()" onfocus="openSenebiVentaDd()" autocomplete="off">
+              <div class="client-dropdown" id="senebi-venta-dd"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row thirds">
+          <div class="form-group">
+            <label class="form-label">Ticker *</label>
+            <input class="form-input" id="f-ticker" placeholder="Ej: GD30, AL30...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plazo *</label>
+            <select class="form-select" id="f-plazo">
+              <option value="">—</option>
+              <option>CI</option>
+              <option>24HS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Moneda *</label>
+            <select class="form-select" id="f-moneda-senebi">
+              <option value="">—</option>
+              <option>ARS</option>
+              <option>MEP</option>
+              <option>CABLE</option>
+              <option>DE CCL A MEP</option>
+              <option>DE MEP A CCL</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row thirds">
+          <div class="form-group">
+            <label class="form-label">Precio Mesa</label>
+            <input class="form-input importe-field" id="f-precio-mesa" placeholder="0,00" oninput="fmtImporte(this)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio Cliente</label>
+            <input class="form-input importe-field" id="f-precio-cliente" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nominales</label>
+            <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label class="form-label">Monto <span style="font-size:10px;color:var(--teal-dark);font-weight:600">(Nominales × Precio Cliente — calculado automáticamente)</span></label>
+            <input class="form-input importe-field" id="f-monto-senebi" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--teal-dark);font-weight:700">
           </div>
         </div>
       </div>
@@ -806,6 +941,80 @@ let banks = [
   'Bradesco (Brazil)','Itaú (Brazil)','Banco do Brasil','BTG Pactual (Brazil)',
   'Banco de Chile','BancoEstado (Chile)','ICBC Argentina',
 ];
+
+let fondos = [
+  // MEGAQM
+  'MEGAQM FCI Ahorro','MEGAQM FCI Liquidez','MEGAQM FCI Renta Fija','MEGAQM FCI Renta Mixta',
+  'MEGAQM FCI Renta Variable','MEGAQM FCI Cobertura','MEGAQM FCI Renta Fija Plus',
+  // Balanz
+  'Balanz Capital Ahorro','Balanz Capital Renta Fija','Balanz Capital Renta Mixta',
+  'Balanz Capital Renta Variable','Balanz Capital Cobertura','Balanz Capital Performance',
+  'Balanz Capital Renta Fija Dólares','Balanz Capital Liquidez',
+  // Schroder
+  'Schroder Renta Fija','Schroder Renta Mixta','Schroder Renta Variable',
+  'Schroder Liquidez','Schroder Cobertura','Schroder Renta Fija Dólares',
+  // Cohen
+  'Cohen Renta Fija','Cohen Renta Mixta','Cohen Renta Variable','Cohen Liquidez',
+  'Cohen Ahorro','Cohen Cobertura',
+  // Alchemy
+  'Alchemy Renta Fija','Alchemy Renta Mixta','Alchemy Renta Variable',
+  'Alchemy Liquidez','Alchemy Cobertura',
+  // AdCap
+  'AdCap Ahorro','AdCap Renta Fija','AdCap Renta Mixta','AdCap Renta Variable',
+  'AdCap Cobertura','AdCap Liquidez',
+  // SBS
+  'SBS Ahorro','SBS Renta Fija','SBS Renta Mixta','SBS Renta Variable',
+  'SBS Cobertura','SBS Retorno Total',
+  // Pellegrini
+  'Pellegrini Renta Fija','Pellegrini Renta Mixta','Pellegrini Renta Variable',
+  'Pellegrini Liquidez','Pellegrini Cobertura',
+  // Compass
+  'Compass Renta Fija','Compass Renta Mixta','Compass Renta Variable',
+  'Compass Ahorro','Compass Cobertura',
+  // Santander
+  'Santander Renta Fija','Santander Renta Mixta','Santander Renta Variable',
+  'Santander Liquidez','Santander Cobertura',
+  // HSBC
+  'HSBC Renta Fija','HSBC Renta Mixta','HSBC Renta Variable',
+  'HSBC Liquidez','HSBC Cobertura',
+  // Galicia
+  'Galicia Renta Fija','Galicia Renta Mixta','Galicia Renta Variable',
+  'Galicia Liquidez','Galicia Cobertura',
+  // Itau
+  'Itaú Renta Fija','Itaú Renta Mixta','Itaú Renta Variable',
+  'Itaú Liquidez','Itaú Cobertura',
+  // Premier
+  'Premier Renta Fija','Premier Renta Mixta','Premier Renta Variable',
+  'Premier Liquidez','Premier Cobertura',
+  // Alpha (ICBC)
+  'Alpha Renta Capital','Alpha Renta Cobertura','Alpha Renta Mixta',
+  'Alpha Renta Variable','Alpha Ahorro',
+  // Consultatio
+  'Consultatio Renta Fija','Consultatio Renta Mixta','Consultatio Renta Variable',
+  'Consultatio Liquidez','Consultatio Cobertura',
+  // MAF
+  'MAF Liquidez','MAF Renta Fija','MAF Renta Mixta','MAF Renta Variable',
+  // Patria
+  'Patria Renta Fija','Patria Renta Mixta','Patria Renta Variable','Patria Liquidez',
+  // Quinquela
+  'Quinquela Renta Fija','Quinquela Renta Mixta','Quinquela Renta Variable',
+  'Quinquela Liquidez','Quinquela Cobertura',
+  // Galileo
+  'Galileo Renta Fija','Galileo Renta Mixta','Galileo Renta Variable','Galileo Liquidez',
+  // IEB
+  'IEB Renta Fija','IEB Renta Mixta','IEB Renta Variable','IEB Liquidez',
+  // Bull Market
+  'Bull Market Renta Fija','Bull Market Renta Variable','Bull Market Liquidez',
+  // Inversor Global
+  'Inversor Global Renta Fija','Inversor Global Renta Mixta','Inversor Global Liquidez',
+  // Supervielle
+  'Supervielle Renta Fija','Supervielle Renta Mixta','Supervielle Liquidez',
+  // BBVA
+  'BBVA Renta Fija','BBVA Renta Mixta','BBVA Renta Variable','BBVA Liquidez',
+  // Macro
+  'Macro Renta Fija','Macro Renta Mixta','Macro Renta Variable','Macro Liquidez',
+];
+
 
 // Sample orders
 let orders = [];
@@ -958,8 +1167,8 @@ function doLogout() {
 //  VIEWS
 // ═══════════════════════════════════════════════════
 const VIEW_TITLES = {
-  'fci-hoy':'FCI — Hoy','pagos-hoy':'Pagos — Hoy','conv-hoy':'Conversiones — Hoy',
-  'historial':'Historial Acumulado','admin':'Panel de Administración'
+  'fci-hoy':'FCI — Hoy','pagos-hoy':'Pagos — Hoy','conv-hoy':'Conversiones — Hoy','lic-hoy':'Licitaciones — Hoy','senebi-hoy':'SENEBI — Hoy',
+  'historial':'Historial Acumulado','senebi-hoy':'SENEBI — Hoy','admin':'Panel de Administración'
 };
 
 function showView(view) {
@@ -995,17 +1204,23 @@ function setModalFields(view) {
   } else if (view === 'pagos-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>PAGO</option>';
     showFields('pago');
-    populateBankSelect();
   } else if (view === 'conv-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>CONVERSION</option>';
     showFields('conv');
+  } else if (view === 'lic-hoy') {
+    tipo.innerHTML = '<option value="">—</option><option>LICITACION</option>';
+    showFields('lic');
+  } else if (view === 'senebi-hoy') {
+    tipo.innerHTML = '<option value="">—</option><option>SENEBI</option>';
+    showFields('senebi');
   }
 }
-
 function onTipoChange() {
   const t = document.getElementById('f-tipo').value;
-  if (t === 'PAGO') { showFields('pago'); populateBankSelect(); }
+  if (t === 'PAGO') { showFields('pago'); }
   else if (t === 'CONVERSION') showFields('conv');
+  else if (t === 'LICITACION') showFields('lic');
+  else if (t === 'SENEBI') showFields('senebi');
   else showFields('fci');
 }
 
@@ -1013,6 +1228,8 @@ function showFields(type) {
   document.getElementById('fci-fields').style.display  = (type==='fci')  ? 'block':'none';
   document.getElementById('pago-fields').style.display = (type==='pago') ? 'block':'none';
   document.getElementById('conv-fields').style.display = (type==='conv') ? 'block':'none';
+  document.getElementById('lic-fields').style.display    = (type==='lic')    ? 'block':'none';
+  document.getElementById('senebi-fields').style.display = (type==='senebi') ? 'block':'none';
 }
 
 function setFilter(f, el) {
@@ -1026,19 +1243,107 @@ function setFilter(f, el) {
 //  TABLE
 // ═══════════════════════════════════════════════════
 function getTabName(view) {
-  return {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv'}[view] || view.replace('-hoy','');
+  return {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',senebi:'senebi','senebi-hoy':'senebi'}[view] || view.replace('-hoy','');
 }
 
 function getTodayOrders() {
   const tab = getTabName(currentView);
   let rows = orders.filter(o => o.tab === tab && o.fecha === TODAY);
-  if (!currentUser.isAdmin) rows = rows.filter(o => o.solicitadoPor === currentUser.id);
+  if (!currentUser.isAdmin) {
+    console.log('Filtering for user:', currentUser.id, 'Total orders:', rows.length);
+    rows.forEach(function(o) { console.log('Order:', o.id, 'solicitadoPor:', o.solicitadoPor); });
+    rows = rows.filter(o => o.solicitadoPor === currentUser.id);
+    console.log('After filter:', rows.length);
+  }
   if (currentFilter !== 'all') rows = rows.filter(o => o.estado === currentFilter);
   return rows;
 }
 
 function savePasswordToFirebase(uid, hashedPw, isFirst) {
   try { window.__db && window.__db.ref('usuarios/'+uid).set({password:hashedPw,firstLogin:isFirst}); } catch(e){}
+}
+
+// ── SENEBI COMITENTE COMPRA/VENTA ──
+let selectedSenebiCompra = null;
+let selectedSenebiVenta = null;
+
+function calcMonto() {
+  const precioStr = (document.getElementById('f-precio-cliente').value||'').replace(/\./g,'').replace(',','.');
+  const nominalesStr = (document.getElementById('f-nominales').value||'').replace(/\./g,'').replace(',','.');
+  const precio = parseFloat(precioStr)||0;
+  const nominales = parseFloat(nominalesStr)||0;
+  const monto = precio * nominales;
+  if (monto > 0) {
+    const formatted = monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('f-monto-senebi').value = formatted;
+  } else {
+    document.getElementById('f-monto-senebi').value = '';
+  }
+}
+
+function makeSenebiSearch(id, ddId, displayId, textId, setterFn) {
+  return {
+    filter: function() {
+      const dd = document.getElementById(ddId);
+      if(dd) dd.classList.add('open');
+      const q = (document.getElementById(id).value||'').toLowerCase().trim();
+      const results = clients.filter(c=>c.activo&&(!q||c.nombre.toLowerCase().includes(q)||c.comitente.includes(q))).slice(0,25);
+      const ddEl = document.getElementById(ddId);
+      if(!ddEl) return;
+      ddEl.innerHTML='';
+      results.forEach(function(c){
+        const d=document.createElement('div'); d.className='client-option';
+        d.innerHTML='<span class="cn">'+c.comitente+'</span>'+c.nombre;
+        d.addEventListener('click',function(){ setterFn(c.comitente, c.nombre); }); ddEl.appendChild(d);
+      });
+    },
+    open: function() {
+      const dd = document.getElementById(ddId);
+      if(dd){ dd.classList.add('open');
+        if(!dd.innerHTML){
+          const results = clients.filter(c=>c.activo).slice(0,25);
+          dd.innerHTML='';
+          results.forEach(function(c){
+            const d=document.createElement('div'); d.className='client-option';
+            d.innerHTML='<span class="cn">'+c.comitente+'</span>'+c.nombre;
+            d.addEventListener('click',function(){ setterFn(c.comitente, c.nombre); }); dd.appendChild(d);
+          });
+        }
+      }
+    }
+  };
+}
+
+function filterSenebiCompra() { makeSenebiSearch('senebi-compra-input','senebi-compra-dd','senebi-compra-display','senebi-compra-text',selectSenebiCompra).filter(); }
+function openSenebiCompraDd() { makeSenebiSearch('senebi-compra-input','senebi-compra-dd','senebi-compra-display','senebi-compra-text',selectSenebiCompra).open(); }
+function selectSenebiCompra(num, nombre) {
+  selectedSenebiCompra = {comitente:num, nombre:nombre};
+  document.getElementById('senebi-compra-text').textContent = num+' · '+nombre;
+  document.getElementById('senebi-compra-display').style.display='flex';
+  document.getElementById('senebi-compra-input').style.display='none';
+  document.getElementById('senebi-compra-dd').classList.remove('open');
+}
+function clearSenebiCompra() {
+  selectedSenebiCompra=null;
+  document.getElementById('senebi-compra-display').style.display='none';
+  document.getElementById('senebi-compra-input').style.display='block';
+  document.getElementById('senebi-compra-input').value='';
+}
+
+function filterSenebiVenta() { makeSenebiSearch('senebi-venta-input','senebi-venta-dd','senebi-venta-display','senebi-venta-text',selectSenebiVenta).filter(); }
+function openSenebiVentaDd() { makeSenebiSearch('senebi-venta-input','senebi-venta-dd','senebi-venta-display','senebi-venta-text',selectSenebiVenta).open(); }
+function selectSenebiVenta(num, nombre) {
+  selectedSenebiVenta = {comitente:num, nombre:nombre};
+  document.getElementById('senebi-venta-text').textContent = num+' · '+nombre;
+  document.getElementById('senebi-venta-display').style.display='flex';
+  document.getElementById('senebi-venta-input').style.display='none';
+  document.getElementById('senebi-venta-dd').classList.remove('open');
+}
+function clearSenebiVenta() {
+  selectedSenebiVenta=null;
+  document.getElementById('senebi-venta-display').style.display='none';
+  document.getElementById('senebi-venta-input').style.display='block';
+  document.getElementById('senebi-venta-input').value='';
 }
 
 function getBtns(o) {
@@ -1135,7 +1440,7 @@ function renderTable() {
   }
 
   body.innerHTML = rows.map(o => {
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion'}[o.tipo]||'';
+    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const pClass = o.prioridad ? 'p-'+o.prioridad : '';
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
@@ -1144,6 +1449,8 @@ function renderTable() {
     if (tab==='fci')   extraCols = `<td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.fondo||'—'}</td>`;
     if (tab==='pagos') extraCols = `<td style="font-size:12px">${o.banco||'—'}</td><td><span class="tipo-badge">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td><td class="id-mono">${o.fechaLiq||'—'}</td>`;
+    if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.denominacion||'—'}</td><td class="id-mono">${o.precioTasa||'—'}</td><td class="id-mono">${o.cantidad||'—'}</td><td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>`;
+    if (tab==='senebi') extraCols = `<td style="font-size:12px">${o.comitenteCompra||'—'} · ${(o.nombreCompra||'').slice(0,15)}</td><td style="font-size:12px">${o.comitenteVenta||'—'} · ${(o.nombreVenta||'').slice(0,15)}</td><td class="id-mono" style="font-weight:700">${o.ticker||'—'}</td><td><span class="tipo-badge">${o.plazo||'—'}</span></td><td><span class="tipo-badge">${o.monedaSenebi||'—'}</span></td><td class="id-mono">${o.precioMesa||'—'}</td><td class="id-mono">${o.precioCliente||'—'}</td><td class="id-mono">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${o.monto||'—'}</td>`;
 
     let statusCell = isAdmin
       ? `<td><select class="status-select" onchange="updateStatus('${o.id}',this.value)">
@@ -1160,7 +1467,7 @@ function renderTable() {
       <td class="id-mono">${o.comitente}</td>
       <td style="font-weight:700;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
       ${extraCols}
-      <td class="id-mono" style="font-weight:700;color:var(--text)">${o.importe||'—'}</td>
+      ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)">${o.importe||'—'}</td>` : '<td></td>'}
       <td>${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
@@ -1210,7 +1517,14 @@ function renderHistorial() {
   if (!currentUser.isAdmin) rows = rows.filter(o => o.solicitadoPor === currentUser.id);
   if (from)     rows = rows.filter(o => o.fecha >= from);
   if (to)       rows = rows.filter(o => o.fecha <= to);
-  if (tipo)     rows = rows.filter(o => o.tab === tipo || (tipo==='fci'&&o.tab==='fci') || (tipo==='pagos'&&o.tab==='pagos') || (tipo==='conversiones'&&o.tab==='conv'));
+  if (tipo)     rows = rows.filter(o => {
+    if (tipo==='fci') return o.tab==='fci';
+    if (tipo==='pagos') return o.tab==='pagos';
+    if (tipo==='conversiones') return o.tab==='conv';
+    if (tipo==='licitaciones') return o.tab==='lic';
+    if (tipo==='senebi') return o.tab==='senebi';
+    return true;
+  });
   if (estado)   rows = rows.filter(o => o.estado === estado);
   if (comercial)rows = rows.filter(o => o.solicitadoPor === comercial);
 
@@ -1230,7 +1544,7 @@ function renderHistorial() {
   }
 
   body.innerHTML = rows.map(o => {
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion'}[o.tipo]||'';
+    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
     let detalle = o.fondo || o.banco || o.monedaConv || '—';
@@ -1272,16 +1586,35 @@ function exportHistorialXLSX() {
 // ═══════════════════════════════════════════════════
 function openModal() {
   selectedClient = null;
+  selectedBanco = null;
+  selectedFondo = null;
   document.getElementById('client-modal-search').value = '';
   document.getElementById('client-modal-search').style.display = 'block';
   document.getElementById('client-sel-display').style.display = 'none';
   document.getElementById('client-dd').classList.remove('open');
+  // Reset banco
+  const bsd=document.getElementById('banco-sel-display'); if(bsd) bsd.style.display='none';
+  const bsi=document.getElementById('banco-search-input'); if(bsi){bsi.style.display='block';bsi.value='';}
+  const bdd=document.getElementById('banco-dd'); if(bdd){bdd.innerHTML='';bdd.classList.remove('open');}
+  // Reset fondo
+  const fsd=document.getElementById('fondo-sel-display'); if(fsd) fsd.style.display='none';
+  const fsi=document.getElementById('fondo-search-input'); if(fsi){fsi.style.display='block';fsi.value='';}
+  const fdd=document.getElementById('fondo-dd'); if(fdd){fdd.innerHTML='';fdd.classList.remove('open');}
   document.getElementById('f-comentarios').value = '';
   document.getElementById('f-prioridad').value = '';
   ['f-fondo','f-importe-fci','f-importe-pago','f-importe-conv'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';} );
   const today = TODAY;
   ['f-fecha-fci','f-fecha-pago','f-fecha-conv','f-fecha-liq'].forEach(id => {const el=document.getElementById(id);if(el)el.value=today;});
-  const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión'};
+  ['f-denominacion','f-precio-tasa','f-cantidad'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';});
+  const ml=document.getElementById('f-moneda-lic');if(ml)ml.value='';
+  // Reset SENEBI
+  selectedSenebiCompra=null; selectedSenebiVenta=null;
+  ['senebi-compra-display','senebi-venta-display'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['senebi-compra-input','senebi-venta-input'].forEach(function(id){const el=document.getElementById(id);if(el){el.style.display='block';el.value='';}});
+  ['f-ticker','f-precio-mesa','f-precio-cliente','f-nominales','f-monto-senebi'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  const pl=document.getElementById('f-plazo');if(pl)pl.value='';
+  const ms=document.getElementById('f-moneda-senebi');if(ms)ms.value='';
+  const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
   document.getElementById('modal-title').textContent = titles[currentView] || 'Nueva Orden';
   setModalFields(currentView);
   document.getElementById('modal').classList.add('open');
@@ -1291,7 +1624,8 @@ function closeModal() {
   document.getElementById('client-dd').classList.remove('open');
   window._editingId=null; window._editingFbKey=null;
   const btn=document.querySelector('.btn-submit'); if(btn) btn.textContent='Enviar Orden';
-  document.getElementById('modal-title').textContent = currentView==='conv-hoy'?'Nueva Conversión':currentView==='pagos-hoy'?'Nueva Orden de Pago':'Nueva Orden FCI';
+  const titles = {'conv-hoy':'Nueva Conversión','pagos-hoy':'Nueva Orden de Pago','lic-hoy':'Nueva Licitación','senebi-hoy':'Nueva Operación SENEBI','fci-hoy':'Nueva Orden FCI'};
+  document.getElementById('modal-title').textContent = titles[currentView]||'Nueva Orden';
 }
 
 // Client search
@@ -1342,12 +1676,13 @@ function submitOrder() {
 
   const tab = getTabName(currentView);
   orderCounter++;
-  const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON'};
+  const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON',lic:'LIC',senebi:'SNB'};
   const prefix = prefixes[tab]||'ORD';
   const id = `${prefix}-${String(orderCounter).padStart(3,'0')}`;
-  const fecha = tab==='fci' ? document.getElementById('f-fecha-fci').value
+  const fecha = tab==='fci'   ? document.getElementById('f-fecha-fci').value
               : tab==='pagos' ? document.getElementById('f-fecha-pago').value
-              : document.getElementById('f-fecha-conv').value;
+              : tab==='conv'  ? document.getElementById('f-fecha-conv').value
+              : TODAY;
 
   const newOrder = {
     id, tab, tipo,
@@ -1361,7 +1696,7 @@ function submitOrder() {
     importe: tab==='fci'   ? document.getElementById('f-importe-fci').value
            : tab==='pagos' ? document.getElementById('f-importe-pago').value
            : document.getElementById('f-importe-conv').value,
-    fondo:     document.getElementById('f-fondo')?.value||'',
+    fondo:     selectedFondo||'',
     banco:     document.getElementById('f-banco')?.value||'',
     moneda:    document.getElementById('f-moneda-pago')?.value||'',
     monedaConv:document.getElementById('f-moneda-conv')?.value||'',
@@ -1395,6 +1730,7 @@ function submitOrder() {
 function renderAdmin() {
   renderComerciales();
   renderBanks();
+  renderFondosAdmin();
   renderClients();
 }
 
@@ -1463,6 +1799,48 @@ function addBank() {
 }
 function removeBank(idx) {
   banks.splice(idx,1); renderBanks(); showToast('Banco eliminado');
+}
+
+function renderFondosAdmin() {
+  const q = (document.getElementById('fondo-search-admin')?.value||'').toLowerCase().trim();
+  const filtered = fondos.filter(f=>!q||f.toLowerCase().includes(q)).slice(0,60);
+  const lbl = document.getElementById('fondos-count-lbl');
+  if(lbl) lbl.textContent = fondos.length + ' fondos';
+  const list = document.getElementById('fondos-list');
+  if(!list) return;
+  list.innerHTML = filtered.map((f,i) => `
+    <div class="admin-list-item">
+      <div style="flex:1"><div class="admin-list-main">${f}</div></div>
+      <button class="admin-action-btn" onclick="removeFondo(${fondos.indexOf(f)})" title="Eliminar">🗑</button>
+    </div>`).join('');
+}
+function addFondo() {
+  const name = document.getElementById('new-fondo-name').value.trim();
+  if(!name) return;
+  if(fondos.includes(name)) { showToast('Ese fondo ya existe'); return; }
+  fondos.push(name);
+  document.getElementById('new-fondo-name').value='';
+  renderFondosAdmin(); showToast('✓ Fondo "'+name+'" agregado');
+}
+function removeFondo(idx) {
+  fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
+}
+function importFondosExcel(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    let added=0;
+    lines.forEach(function(line) {
+      const name = line.trim().replace(/[";]/g,'');
+      if(name && !fondos.includes(name)) { fondos.push(name); added++; }
+    });
+    renderFondosAdmin();
+    showToast('✓ Importados: '+added+' fondos nuevos');
+  };
+  reader.readAsText(file,'UTF-8');
+  event.target.value='';
 }
 
 function renderClients() {
