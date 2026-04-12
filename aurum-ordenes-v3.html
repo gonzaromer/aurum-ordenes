@@ -219,6 +219,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-body)
 
 /* TABLE */
 .table-wrap{background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+.table-wrap.compact td,.table-wrap.compact th{padding:7px 8px;font-size:11px;}
 .table-scroll{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;min-width:900px;}
 thead tr{background:var(--surface2);border-bottom:2px solid var(--border);}
@@ -529,7 +530,7 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
             <button class="filter-chip" data-filter="EN PROCESO" onclick="setFilter('EN PROCESO',this)">En Proceso</button>
             <button class="filter-chip" data-filter="EJECUTADO" onclick="setFilter('EJECUTADO',this)">Ejecutado</button>
           </div>
-          <div class="table-wrap"><div class="table-scroll">
+          <div class="table-wrap" id="main-table-wrap"><div class="table-scroll">
             <table><thead><tr id="table-head"></tr></thead><tbody id="table-body"></tbody></table>
           </div></div>
         </div>
@@ -650,6 +651,15 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
           <label class="form-label">Prioridad</label>
           <select class="form-select" id="f-prioridad">
             <option value="">—</option><option>ALTO</option><option>MEDIO</option><option>BAJO</option>
+          </select>
+        </div>
+      </div>
+      <!-- Asignar a comercial (solo admin/superComercial) -->
+      <div class="form-row full" id="asignar-row" style="display:none">
+        <div class="form-group">
+          <label class="form-label" style="color:var(--teal-dark)">🔀 Asignar orden a comercial</label>
+          <select class="form-select" id="f-asignar-comercial">
+            <option value="">— Cargar como propio —</option>
           </select>
         </div>
       </div>
@@ -804,10 +814,10 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
             </div>
           </div>
         </div>
-        <div class="form-row thirds">
+        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr">
           <div class="form-group">
             <label class="form-label">Ticker *</label>
-            <input class="form-input" id="f-ticker" placeholder="Ej: GD30, AL30...">
+            <input class="form-input" id="f-ticker" placeholder="GD30...">
           </div>
           <div class="form-group">
             <label class="form-label">Plazo *</label>
@@ -821,15 +831,10 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
             <label class="form-label">Moneda *</label>
             <select class="form-select" id="f-moneda-senebi">
               <option value="">—</option>
-              <option>ARS</option>
-              <option>MEP</option>
-              <option>CABLE</option>
-              <option>DE CCL A MEP</option>
-              <option>DE MEP A CCL</option>
+              <option>ARS</option><option>MEP</option><option>CABLE</option>
+              <option>DE CCL A MEP</option><option>DE MEP A CCL</option>
             </select>
           </div>
-        </div>
-        <div class="form-row thirds">
           <div class="form-group">
             <label class="form-label">Precio Mesa</label>
             <input class="form-input importe-field" id="f-precio-mesa" placeholder="0,00" oninput="fmtImporte(this)">
@@ -838,15 +843,15 @@ td{padding:11px 12px;font-size:13px;vertical-align:middle;}
             <label class="form-label">Precio Cliente</label>
             <input class="form-input importe-field" id="f-precio-cliente" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Nominales</label>
             <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
           </div>
-        </div>
-        <div class="form-row full">
           <div class="form-group">
-            <label class="form-label">Monto <span style="font-size:10px;color:var(--teal-dark);font-weight:600">(Nominales × Precio Cliente — calculado automáticamente)</span></label>
-            <input class="form-input importe-field" id="f-monto-senebi" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--teal-dark);font-weight:700">
+            <label class="form-label">Monto <span style="font-size:9px;color:var(--teal-dark)">(Nominales × Precio Cliente)</span></label>
+            <input class="form-input importe-field" id="f-monto-senebi" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--teal-dark);font-weight:700;cursor:default">
           </div>
         </div>
       </div>
@@ -907,6 +912,13 @@ let comerciales = [
   {id:'silvana',    name:'Silvana De Nicola', isAdmin:false},
   {id:'sofia',      name:'Sofia Bugdadi', isAdmin:false},
 ];
+
+// ── PERMISSION HELPERS ──
+function isAdmin() { return currentUser && currentUser.isAdmin; }
+function isSuperComercial() { return currentUser && (currentUser.id==='gaston' || currentUser.id==='julian'); }
+function canEditAnyOrder() { return isAdmin() || isSuperComercial(); }
+function canChangeStatus(tab) { return isAdmin() || (isSuperComercial() && tab==='senebi'); }
+function canAssignComercial() { return isAdmin() || isSuperComercial(); }
 
 function initPasswords() {
   comerciales.forEach(function(c) {
@@ -1149,6 +1161,9 @@ function launchApp() {
     document.getElementById('admin-nav-section').style.display = 'block';
     document.getElementById('stats-section').style.display = 'grid';
     populateHistComercial();
+  } else if (isSuperComercial()) {
+    document.getElementById('stats-section').style.display = 'grid';
+    populateHistComercial();
   }
   showView('fci-hoy');
 }
@@ -1351,8 +1366,8 @@ function getBtns(o) {
   var eid = o.fbKey || o.id;
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
-  if (currentUser.isAdmin) return eBtn+dBtn;
-  // Comercial only sees their own orders, so just check estado
+  if (canEditAnyOrder()) return eBtn+dBtn;
+  // Regular comercial - only edit/delete their own PENDIENTE orders
   if (o.estado==='PENDIENTE') return eBtn+dBtn;
   return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
@@ -1361,8 +1376,8 @@ function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
-  // Comercial can only edit PENDIENTE orders (they only see their own)
-  if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
+  // Permission check
+  if (!canEditAnyOrder() && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   if (o.fbKey) { window.__db.ref('ordenes/'+o.fbKey).remove().then(()=>showToast('Orden eliminada')); }
   else { orders=orders.filter(x=>x.id!==id); renderTable(); showToast('Orden eliminada'); }
 }
@@ -1370,8 +1385,8 @@ function deleteOrder(id) {
 function editOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
-  // Comercial can only edit PENDIENTE orders (they only see their own)
-  if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
+  // Permission check
+  if (!canEditAnyOrder() && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
@@ -1423,17 +1438,20 @@ function renderTable() {
   const isAdmin = currentUser.isAdmin;
 
   // Columns: ID → Fecha → Tipo → Comitente → Cliente → [extra] → Importe → [Moneda] → Prioridad → Estado → Comercial(admin)
-  let cols = ['ID','Fecha','Tipo','Comitente','Cliente'];
+  let cols = ['ID','Fecha','Tipo'];
+  if (tab!=='senebi') cols.push('Comitente','Cliente');
   if (tab==='fci')    cols.push('Fondo');
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
-  if (tab==='senebi') cols.push('Cte. Compra','Cte. Venta','Ticker','Plazo','Moneda','Precio Mesa','Precio Cliente','Nominales','Monto');
+  if (tab==='senebi') cols.push('Cte. Compra','Cte. Venta','Ticker','Plazo','Moneda','P. Mesa','P. Cliente','Nominales','Monto');
   if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
   cols.push('Prioridad','Estado');
   if (isAdmin) cols.push('Comercial');
   cols.push('');
 
+  const tw = document.getElementById('main-table-wrap');
+  if(tw) { if(tab==='senebi') tw.classList.add('compact'); else tw.classList.remove('compact'); }
   document.getElementById('table-head').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
   const body = document.getElementById('table-body');
 
@@ -1453,9 +1471,10 @@ function renderTable() {
     if (tab==='pagos') extraCols = `<td style="font-size:12px">${o.banco||'—'}</td><td><span class="tipo-badge">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td><td class="id-mono">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.denominacion||'—'}</td><td class="id-mono">${o.precioTasa||'—'}</td><td class="id-mono">${o.cantidad||'—'}</td><td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>`;
-    if (tab==='senebi') extraCols = `<td style="font-size:12px">${o.comitenteCompra||'—'} · ${(o.nombreCompra||'').slice(0,15)}</td><td style="font-size:12px">${o.comitenteVenta||'—'} · ${(o.nombreVenta||'').slice(0,15)}</td><td class="id-mono" style="font-weight:700">${o.ticker||'—'}</td><td><span class="tipo-badge">${o.plazo||'—'}</span></td><td><span class="tipo-badge">${o.monedaSenebi||'—'}</span></td><td class="id-mono">${o.precioMesa||'—'}</td><td class="id-mono">${o.precioCliente||'—'}</td><td class="id-mono">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${o.monto||'—'}</td>`;
+    if (tab==='senebi') extraCols = `<td>${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td>${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700">${o.ticker||'—'}</td><td><span class="tipo-badge">${o.plazo||'—'}</span></td><td><span class="tipo-badge">${o.monedaSenebi||'—'}</span></td><td class="id-mono">${o.precioMesa||'—'}</td><td class="id-mono">${o.precioCliente||'—'}</td><td class="id-mono">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${o.monto||'—'}</td>`;
 
-    let statusCell = isAdmin
+    const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
+    let statusCell = canChange
       ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
            ${['PENDIENTE','ENVIADO','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
@@ -1467,8 +1486,8 @@ function renderTable() {
       <td class="id-mono">${o.id}</td>
       <td class="id-mono">${o.fecha}</td>
       <td><span class="tipo-badge ${tipoClass}">${o.tipo}</span></td>
-      <td class="id-mono">${o.comitente}</td>
-      <td style="font-weight:700;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+      ${tab!=='senebi' ? `<td class="id-mono">${o.comitente}</td>` : ''}
+      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>` : ''}
       ${extraCols}
       ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)">${o.importe||'—'}</td>` : ''}
       <td>${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
@@ -1587,6 +1606,20 @@ function exportHistorialXLSX() {
 //  MODAL
 // ═══════════════════════════════════════════════════
 function openModal() {
+  // Show/hide asignar comercial field
+  const asignarRow = document.getElementById('asignar-row');
+  const asignarSel = document.getElementById('f-asignar-comercial');
+  if (canAssignComercial()) {
+    asignarRow.style.display = 'block';
+    asignarSel.innerHTML = '<option value="">— Cargar como propio —</option>';
+    comerciales.filter(c=>!c.isAdmin).forEach(function(c) {
+      if (c.id !== currentUser.id) {
+        asignarSel.innerHTML += '<option value="'+c.id+'">'+c.name+'</option>';
+      }
+    });
+  } else {
+    asignarRow.style.display = 'none';
+  }
   selectedClient = null;
   selectedBanco = null;
   selectedFondo = null;
@@ -1690,7 +1723,9 @@ function submitOrder() {
     id, tab, tipo,
     comitente: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : selectedClient.comitente,
     cliente:   tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : selectedClient.nombre,
-    solicitadoPor: currentUser.id,
+    solicitadoPor: (canAssignComercial() && document.getElementById('f-asignar-comercial')?.value)
+                   ? document.getElementById('f-asignar-comercial').value
+                   : currentUser.id,
     estado: 'PENDIENTE',
     prioridad: document.getElementById('f-prioridad').value || 'MEDIO',
     fecha: fecha || TODAY,
