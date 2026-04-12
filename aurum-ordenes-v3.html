@@ -1689,8 +1689,8 @@ function submitOrder() {
 
   const newOrder = {
     id, tab, tipo,
-    comitente: selectedClient.comitente,
-    cliente: selectedClient.nombre,
+    comitente: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : selectedClient.comitente,
+    cliente:   tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : selectedClient.nombre,
     solicitadoPor: currentUser.id,
     estado: 'PENDIENTE',
     prioridad: document.getElementById('f-prioridad').value || 'MEDIO',
@@ -1698,12 +1698,30 @@ function submitOrder() {
     comentarios: document.getElementById('f-comentarios').value,
     importe: tab==='fci'   ? document.getElementById('f-importe-fci').value
            : tab==='pagos' ? document.getElementById('f-importe-pago').value
-           : document.getElementById('f-importe-conv').value,
-    fondo:     selectedFondo||'',
-    banco:     document.getElementById('f-banco')?.value||'',
-    moneda:    document.getElementById('f-moneda-pago')?.value||'',
-    monedaConv:document.getElementById('f-moneda-conv')?.value||'',
-    fechaLiq:  document.getElementById('f-fecha-liq')?.value||'',
+           : tab==='conv'  ? document.getElementById('f-importe-conv').value
+           : '',
+    fondo:      selectedFondo||'',
+    banco:      selectedBanco||'',
+    moneda:     document.getElementById('f-moneda-pago')?.value||'',
+    monedaConv: document.getElementById('f-moneda-conv')?.value||'',
+    fechaLiq:   document.getElementById('f-fecha-liq')?.value||'',
+    // Licitacion
+    denominacion: tab==='lic' ? (document.getElementById('f-denominacion')?.value||'') : '',
+    precioTasa:   tab==='lic' ? (document.getElementById('f-precio-tasa')?.value||'')  : '',
+    cantidad:     tab==='lic' ? (document.getElementById('f-cantidad')?.value||'')     : '',
+    monedaLic:    tab==='lic' ? (document.getElementById('f-moneda-lic')?.value||'')   : '',
+    // SENEBI
+    comitenteCompra: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : '',
+    nombreCompra:    tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : '',
+    comitenteVenta:  tab==='senebi' ? (selectedSenebiVenta?.comitente||'')  : '',
+    nombreVenta:     tab==='senebi' ? (selectedSenebiVenta?.nombre||'')     : '',
+    ticker:       tab==='senebi' ? (document.getElementById('f-ticker')?.value||'')        : '',
+    plazo:        tab==='senebi' ? (document.getElementById('f-plazo')?.value||'')         : '',
+    monedaSenebi: tab==='senebi' ? (document.getElementById('f-moneda-senebi')?.value||'') : '',
+    precioMesa:   tab==='senebi' ? (document.getElementById('f-precio-mesa')?.value||'')   : '',
+    precioCliente:tab==='senebi' ? (document.getElementById('f-precio-cliente')?.value||''):  '',
+    nominales:    tab==='senebi' ? (document.getElementById('f-nominales')?.value||'')     : '',
+    monto:        tab==='senebi' ? (document.getElementById('f-monto-senebi')?.value||'')  : '',
   };
 
   if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
