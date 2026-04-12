@@ -1348,7 +1348,7 @@ function clearSenebiVenta() {
 
 function getBtns(o) {
   var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:4px';
-  var eid = o.id;
+  var eid = o.fbKey || o.id;
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
   if (currentUser.isAdmin) return eBtn+dBtn;
@@ -1359,7 +1359,7 @@ function getBtns(o) {
 
 function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
-  const o = orders.find(x=>x.id===id);
+  const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Comercial can only edit PENDIENTE orders (they only see their own)
   if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
@@ -1368,7 +1368,7 @@ function deleteOrder(id) {
 }
 
 function editOrder(id) {
-  const o = orders.find(x=>x.id===id);
+  const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Comercial can only edit PENDIENTE orders (they only see their own)
   if (!currentUser.isAdmin && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
@@ -1456,7 +1456,7 @@ function renderTable() {
     if (tab==='senebi') extraCols = `<td style="font-size:12px">${o.comitenteCompra||'—'} · ${(o.nombreCompra||'').slice(0,15)}</td><td style="font-size:12px">${o.comitenteVenta||'—'} · ${(o.nombreVenta||'').slice(0,15)}</td><td class="id-mono" style="font-weight:700">${o.ticker||'—'}</td><td><span class="tipo-badge">${o.plazo||'—'}</span></td><td><span class="tipo-badge">${o.monedaSenebi||'—'}</span></td><td class="id-mono">${o.precioMesa||'—'}</td><td class="id-mono">${o.precioCliente||'—'}</td><td class="id-mono">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${o.monto||'—'}</td>`;
 
     let statusCell = isAdmin
-      ? `<td><select class="status-select" onchange="updateStatus('${o.id}',this.value)">
+      ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
            ${['PENDIENTE','ENVIADO','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
@@ -1479,12 +1479,11 @@ function renderTable() {
   }).join('');
 }
 
-function updateStatus(id, val) {
-  const o = orders.find(x=>x.id===id);
+function updateStatus(fbKey, val) {
+  const o = orders.find(x=>x.fbKey===fbKey);
   if (!o) return;
-  // Update in Firebase (single source of truth)
-  if (window.__db && o.fbKey) {
-    window.__db.ref('ordenes/' + o.fbKey).update({estado: val})
+  if (window.__db && fbKey) {
+    window.__db.ref('ordenes/' + fbKey).update({estado: val})
       .then(function() { showToast('✓ Estado → "' + val + '"'); })
       .catch(function(e) {
         o.estado = val;
