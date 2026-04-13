@@ -1507,13 +1507,15 @@ function renderTable() {
   }).join('');
 
   // Tooltip solo cuando el texto está truncado
-  body.querySelectorAll('td').forEach(td => {
-    if (td.scrollWidth > td.clientWidth) {
-      td.title = td.textContent.trim();
-    } else {
-      td.removeAttribute('title');
-    }
-  });
+  setTimeout(() => {
+    body.querySelectorAll('td').forEach(td => {
+      if (td.scrollWidth > td.clientWidth) {
+        td.title = td.textContent.trim();
+      } else {
+        td.removeAttribute('title');
+      }
+    });
+  }, 50);
 }
 
 function updateStatus(fbKey, val) {
@@ -1607,6 +1609,15 @@ function renderHistorial() {
       ${comCol}
     </tr>`;
   }).join('');
+
+  // Tooltip solo cuando el texto está truncado
+  document.querySelectorAll('#hist-body td').forEach(td => {
+    if (td.scrollWidth > td.clientWidth) {
+      td.title = td.textContent.trim();
+    } else {
+      td.removeAttribute('title');
+    }
+  });
 }
 
 function exportHistorialXLSX() {
