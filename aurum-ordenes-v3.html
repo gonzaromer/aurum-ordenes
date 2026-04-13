@@ -1035,6 +1035,7 @@ let currentUser = null;
 let currentView = 'fci-hoy';
 let currentFilter = 'all';
 let selectedClient = null;
+let selectedFondo  = null;
 
 // ═══════════════════════════════════════════════════
 //  IMPORTE FORMATTING
@@ -1706,6 +1707,56 @@ function clearClientSel() {
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('.client-search-wrap')) document.getElementById('client-dd').classList.remove('open');
+});
+
+// ── Selector de Fondo FCI ──────────────────────────────────────────────
+function openFondoDd() {
+  const dd = document.getElementById('fondo-dd');
+  if (!dd) return;
+  dd.classList.add('open');
+  const q = (document.getElementById('fondo-search-input')?.value||'').toLowerCase().trim();
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+}
+function renderFondoDd(list) {
+  const dd = document.getElementById('fondo-dd');
+  if (!dd) return;
+  if (!list.length) { dd.innerHTML = '<div class="client-dd-item" style="color:var(--text-muted)">Sin resultados</div>'; return; }
+  dd.innerHTML = list.map(f =>
+    `<div class="client-dd-item" onclick="selectFondo(${JSON.stringify(f)})">${f}</div>`
+  ).join('');
+}
+function filterFondos() {
+  const q = (document.getElementById('fondo-search-input')?.value||'').toLowerCase().trim();
+  const dd = document.getElementById('fondo-dd');
+  if (!dd) return;
+  dd.classList.add('open');
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+}
+function selectFondo(nombre) {
+  selectedFondo = nombre;
+  const display = document.getElementById('fondo-sel-display');
+  const text    = document.getElementById('fondo-sel-text');
+  const input   = document.getElementById('fondo-search-input');
+  const dd      = document.getElementById('fondo-dd');
+  if (text)    text.textContent = nombre;
+  if (display) display.style.display = 'flex';
+  if (input)   { input.style.display = 'none'; input.value = ''; }
+  if (dd)      { dd.innerHTML = ''; dd.classList.remove('open'); }
+}
+function clearFondoSel() {
+  selectedFondo = null;
+  const display = document.getElementById('fondo-sel-display');
+  const input   = document.getElementById('fondo-search-input');
+  const dd      = document.getElementById('fondo-dd');
+  if (display) display.style.display = 'none';
+  if (input)   { input.style.display = 'block'; input.value = ''; input.focus(); }
+  if (dd)      { dd.innerHTML = ''; dd.classList.remove('open'); }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#fondo-wrap')) {
+    const dd = document.getElementById('fondo-dd');
+    if (dd) dd.classList.remove('open');
+  }
 });
 
 function populateBankSelect() {
