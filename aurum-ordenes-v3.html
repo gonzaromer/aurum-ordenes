@@ -1381,9 +1381,16 @@ function getBtns(o) {
   var eid = o.fbKey || o.id;
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
-  if (canEditAnyOrder()) return eBtn+dBtn;
-  // Regular comercial - only edit/delete their own PENDIENTE orders
-  if (o.estado==='PENDIENTE') return eBtn+dBtn;
+  // Admin puede todo
+  if (isAdmin()) return eBtn+dBtn;
+  // Julián y Gastón: solo SENEBI sin restricción, el resto solo si PENDIENTE
+  if (isSuperComercial()) {
+    if (o.tab === 'senebi') return eBtn+dBtn;
+    if (o.estado === 'PENDIENTE') return eBtn+dBtn;
+    return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
+  }
+  // Comercial regular: solo sus órdenes PENDIENTE
+  if (o.estado === 'PENDIENTE') return eBtn+dBtn;
   return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
 
@@ -1392,7 +1399,7 @@ function deleteOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Permission check
-  if (!canEditAnyOrder() && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
+  if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés eliminar órdenes en estado PENDIENTE'); return; }
   if (o.fbKey) { window.__db.ref('ordenes/'+o.fbKey).remove().then(()=>showToast('Orden eliminada')); }
   else { orders=orders.filter(x=>x.id!==id); renderTable(); showToast('Orden eliminada'); }
 }
@@ -1401,7 +1408,7 @@ function editOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Permission check
-  if (!canEditAnyOrder() && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
+  if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
