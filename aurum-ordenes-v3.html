@@ -1428,7 +1428,13 @@ function editOrder(id) {
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
-      document.getElementById('f-fondo').value=o.fondo||'';
+      // Restaurar fondo seleccionado
+      selectedFondo = o.fondo||'';
+      if (o.fondo) {
+        document.getElementById('fondo-sel-text').textContent = o.fondo;
+        document.getElementById('fondo-sel-display').style.display = 'flex';
+        document.getElementById('fondo-search-input').style.display = 'none';
+      }
       document.getElementById('f-importe-fci').value=o.importe||'';
       document.getElementById('f-fecha-fci').value=o.fecha||'';
     } else if (o.tab==='pagos') {
@@ -1444,6 +1450,28 @@ function editOrder(id) {
       document.getElementById('f-moneda-conv').value=o.monedaConv||'';
       document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
       document.getElementById('f-fecha-conv').value=o.fecha||'';
+    } else if (o.tab==='lic') {
+      document.getElementById('f-denominacion').value=o.denominacion||'';
+      document.getElementById('f-precio-tasa').value=o.precioTasa||'';
+      document.getElementById('f-cantidad').value=o.cantidad||'';
+      document.getElementById('f-moneda-lic').value=o.monedaLic||'';
+    } else if (o.tab==='senebi') {
+      // Restaurar comitente compra
+      selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
+      document.getElementById('senebi-compra-text').textContent = (o.comitenteCompra||'') + ' · ' + (o.nombreCompra||'');
+      document.getElementById('senebi-compra-display').style.display='flex';
+      document.getElementById('senebi-compra-input').style.display='none';
+      // Restaurar comitente venta
+      selectedSenebiVenta = {comitente:o.comitenteVenta||'', nombre:o.nombreVenta||''};
+      document.getElementById('senebi-venta-text').textContent = (o.comitenteVenta||'') + ' · ' + (o.nombreVenta||'');
+      document.getElementById('senebi-venta-display').style.display='flex';
+      document.getElementById('senebi-venta-input').style.display='none';
+      document.getElementById('f-ticker').value=o.ticker||'';
+      document.getElementById('f-plazo').value=o.plazo||'';
+      document.getElementById('f-moneda-senebi').value=o.monedaSenebi||'';
+      document.getElementById('f-precio-mesa').value=o.precioMesa||'';
+      document.getElementById('f-precio-cliente').value=o.precioCliente||'';
+      document.getElementById('f-nominales').value=o.nominales||'';
     }
     window._editingId=id; window._editingFbKey=o.fbKey;
     document.getElementById('modal-title').textContent='Editando Orden '+id;
