@@ -2039,20 +2039,31 @@ function renderFondosAdmin() {
       <button class="admin-action-btn" onclick="removeFondo(${fondos.indexOf(f)})" title="Eliminar">🗑</button>
     </div>`).join('');
 }
+function saveFondosToFirebase() {
+  if (window.__db) window.__db.ref('config/fondos').set(fondos);
+}
+function saveClientsToFirebase() {
+  if (window.__db) window.__db.ref('config/clients').set(clients);
+}
+
 function addFondo() {
   const name = document.getElementById('new-fondo-name').value.trim();
   if(!name) return;
   if(fondos.includes(name)) { showToast('Ese fondo ya existe'); return; }
   fondos.push(name);
   document.getElementById('new-fondo-name').value='';
+  saveFondosToFirebase();
   renderFondosAdmin(); showToast('✓ Fondo "'+name+'" agregado');
 }
 function removeFondo(idx) {
-  fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
+  fondos.splice(idx,1);
+  saveFondosToFirebase();
+  renderFondosAdmin(); showToast('Fondo eliminado');
 }
 function clearAllFondos() {
   if (!confirm('¿Estás seguro que querés borrar TODOS los fondos? Esta acción no se puede deshacer.')) return;
   fondos = [];
+  saveFondosToFirebase();
   renderFondosAdmin();
   showToast('🗑 Lista de fondos vaciada');
 }
@@ -2060,6 +2071,7 @@ function clearAllFondos() {
 function clearAllClients() {
   if (!confirm('¿Estás seguro que querés borrar TODOS los comitentes? Esta acción no se puede deshacer.')) return;
   clients = [];
+  saveClientsToFirebase();
   renderClients();
   showToast('🗑 Lista de comitentes vaciada');
 }
@@ -2083,6 +2095,7 @@ function importFondosExcel(event) {
         if (skip.some(function(s){ return lower.startsWith(s); })) return;
         if (!fondos.includes(name)) { fondos.push(name); added++; }
       });
+      saveFondosToFirebase();
       renderFondosAdmin();
       showToast('✓ Importados: ' + added + ' fondos');
     } catch(err) {
@@ -2107,7 +2120,7 @@ function renderClients() {
 }
 function toggleClient(num) {
   const c = clients.find(x=>x.comitente===num);
-  if (c) { c.activo=!c.activo; renderClients(); showToast('Cliente '+(c.activo?'reactivado':'dado de baja')); }
+  if (c) { c.activo=!c.activo; saveClientsToFirebase(); renderClients(); showToast('Cliente '+(c.activo?'reactivado':'dado de baja')); }
 }
 function addClient() {
   const num=document.getElementById('new-client-num').value.trim();
@@ -2117,6 +2130,7 @@ function addClient() {
   clients.push({comitente:num,nombre:name.toUpperCase(),activo:true});
   document.getElementById('new-client-num').value='';
   document.getElementById('new-client-name').value='';
+  saveClientsToFirebase();
   renderClients(); showToast('✓ Cliente "'+name+'" ('+num+') agregado');
 }
 
@@ -2149,6 +2163,7 @@ function importClientsExcel(event) {
         if (existing) { existing.nombre = nombre; existing.activo = activo; updated++; }
         else { clients.push({ comitente: num, nombre: nombre, activo: activo }); added++; }
       });
+      saveClientsToFirebase();
       renderClients();
       showToast('✓ Importado: ' + added + ' nuevos, ' + updated + ' actualizados');
     } catch(err) {
@@ -2192,6 +2207,22 @@ window.__db = firebase.database();
 
 // Init passwords from Firebase
 initPasswords();
+
+// Cargar fondos y clientes desde Firebase al arrancar
+window.__db.ref('config/fondos').once('value', function(snap) {
+  var data = snap.val();
+  if (data && Array.isArray(data) && data.length > 0) {
+    fondos = data;
+    console.log('✓ Fondos cargados desde Firebase: ' + fondos.length);
+  }
+});
+window.__db.ref('config/clients').once('value', function(snap) {
+  var data = snap.val();
+  if (data && Array.isArray(data) && data.length > 0) {
+    clients = data;
+    console.log('✓ Clientes cargados desde Firebase: ' + clients.length);
+  }
+});
 
 // Realtime orders listener
 window.__db.ref('ordenes').on('value', function(snapshot) {
