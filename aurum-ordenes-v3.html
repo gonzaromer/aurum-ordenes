@@ -221,13 +221,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text-body)
 .table-wrap{background:#fff;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
 .table-wrap.compact td,.table-wrap.compact th{padding:7px 8px;font-size:11px;}
 .table-scroll{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;min-width:900px;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
 thead tr{background:var(--surface2);border-bottom:2px solid var(--border);}
-th{padding:10px 12px;text-align:left;font-size:10px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;}
+th{padding:7px 7px;text-align:left;font-size:9px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;}
 tbody tr{border-bottom:1px solid var(--border);transition:background 0.12s;}
 tbody tr:hover{background:#F7F9FF;}
 tbody tr:last-child{border-bottom:none;}
-td{padding:11px 12px;font-size:13px;vertical-align:middle;}
+td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 .id-mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);}
 
 /* BADGES */
@@ -1365,7 +1365,7 @@ function clearSenebiVenta() {
 }
 
 function getBtns(o) {
-  var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:4px';
+  var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:3px';
   var eid = o.fbKey || o.id;
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
@@ -1470,7 +1470,7 @@ function renderTable() {
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
 
     let extraCols = '';
-    if (tab==='fci')   extraCols = `<td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.fondo||'—'}</td>`;
+    if (tab==='fci')   extraCols = `<td style="font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.fondo||'—'}</td>`;
     if (tab==='pagos') extraCols = `<td style="font-size:12px">${o.banco||'—'}</td><td><span class="tipo-badge">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td><td class="id-mono">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.denominacion||'—'}</td><td class="id-mono">${o.precioTasa||'—'}</td><td class="id-mono">${o.cantidad||'—'}</td><td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>`;
