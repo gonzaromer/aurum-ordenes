@@ -1486,7 +1486,7 @@ function renderTable() {
     if (tab==='pagos') extraCols = `<td style="font-size:12px" title="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" title="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" title="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" title="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" title="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" title="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" title="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
-    if (tab==='senebi') extraCols = `<td title="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td title="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700" title="${o.ticker||''}">${o.ticker||'—'}</td><td title="${o.plazo||''}">${o.plazo||'—'}</td><td title="${o.monedaSenebi||''}">${o.monedaSenebi||'—'}</td><td class="id-mono" title="${o.precioMesa||''}">${o.precioMesa||'—'}</td><td class="id-mono" title="${o.precioCliente||''}">${o.precioCliente||'—'}</td><td class="id-mono" title="${o.nominales||''}">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)" title="${o.monto||''}">${o.monto||'—'}</td>`;
+    if (tab==='senebi') extraCols = `<td class="senebi-cte" title="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td class="senebi-cte" title="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700" title="${o.ticker||''}">${o.ticker||'—'}</td><td title="${o.plazo||''}">${o.plazo||'—'}</td><td title="${o.monedaSenebi||''}">${o.monedaSenebi||'—'}</td><td class="id-mono" title="${o.precioMesa||''}">${o.precioMesa||'—'}</td><td class="id-mono" title="${o.precioCliente||''}">${o.precioCliente||'—'}</td><td class="id-mono" title="${o.nominales||''}">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)" title="${o.monto||''}">${o.monto||'—'}</td>`;
 
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
     let statusCell = canChange
@@ -2167,18 +2167,22 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
-<div id="aurum-tooltip" style="position:fixed;background:#1B2A6B;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;white-space:nowrap;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.2);pointer-events:none;font-family:Nunito,sans-serif;display:none;"></div>
+<div id="aurum-tooltip" style="position:fixed;background:rgba(30,30,30,0.85);color:#fff;font-size:12px;font-weight:500;padding:4px 9px;border-radius:4px;white-space:nowrap;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,0.15);pointer-events:none;font-family:Nunito,sans-serif;display:none;"></div>
 <script>
 (function(){
   var tip = document.getElementById('aurum-tooltip');
   document.addEventListener('mouseover', function(e){
     var td = e.target.closest('td[title]');
-    if(td && td.getAttribute('title') && (td.scrollWidth > td.clientWidth + 2)){
-      tip.textContent = td.getAttribute('title');
-      tip.style.display = 'block';
-    } else {
-      tip.style.display = 'none';
+    if(td && td.getAttribute('title')){
+      var isSenebiCte = td.classList.contains('senebi-cte');
+      var isTruncated = td.scrollWidth > td.clientWidth + 2;
+      if(isSenebiCte || isTruncated){
+        tip.textContent = td.getAttribute('title');
+        tip.style.display = 'block';
+        return;
+      }
     }
+    tip.style.display = 'none';
   });
   document.addEventListener('mousemove', function(e){
     if(tip.style.display==='block'){
