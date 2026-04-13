@@ -1415,69 +1415,76 @@ function deleteOrder(id) {
 function editOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
-  // Permission check
   if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
-  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
+
+  // Navegar a la vista correcta
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
+
+  // Abrir modal limpio primero
+  openModal();
+
+  // Sobreescribir campos con los datos de la orden (después del reset de openModal)
   setTimeout(function() {
+    // Cliente
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
     document.getElementById('client-sel-text').textContent = o.comitente+' · '+o.cliente;
     document.getElementById('client-sel-display').style.display='flex';
     document.getElementById('client-modal-search').style.display='none';
+
+    // Campos comunes
     document.getElementById('f-tipo').value = o.tipo;
+    onTipoChange();
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
+
     if (o.tab==='fci') {
-      // Restaurar fondo seleccionado
       selectedFondo = o.fondo||'';
-      if (o.fondo) {
-        document.getElementById('fondo-sel-text').textContent = o.fondo;
-        document.getElementById('fondo-sel-display').style.display = 'flex';
-        document.getElementById('fondo-search-input').style.display = 'none';
-      }
-      document.getElementById('f-importe-fci').value=o.importe||'';
-      document.getElementById('f-fecha-fci').value=o.fecha||'';
+      document.getElementById('fondo-sel-text').textContent = o.fondo||'';
+      document.getElementById('fondo-sel-display').style.display = o.fondo ? 'flex' : 'none';
+      document.getElementById('fondo-search-input').style.display = o.fondo ? 'none' : 'block';
+      document.getElementById('f-importe-fci').value = o.importe||'';
+      document.getElementById('f-fecha-fci').value = o.fecha||'';
     } else if (o.tab==='pagos') {
-      selectedBanco=o.banco||'';
-      document.getElementById('banco-sel-text').textContent=o.banco||'';
+      selectedBanco = o.banco||'';
+      document.getElementById('banco-sel-text').textContent = o.banco||'';
       document.getElementById('banco-sel-display').style.display='flex';
       document.getElementById('banco-search-input').style.display='none';
-      document.getElementById('f-moneda-pago').value=o.moneda||'';
-      document.getElementById('f-importe-pago').value=o.importe||'';
-      document.getElementById('f-fecha-pago').value=o.fecha||'';
+      document.getElementById('f-moneda-pago').value = o.moneda||'';
+      document.getElementById('f-importe-pago').value = o.importe||'';
+      document.getElementById('f-fecha-pago').value = o.fecha||'';
     } else if (o.tab==='conv') {
-      document.getElementById('f-importe-conv').value=o.importe||'';
-      document.getElementById('f-moneda-conv').value=o.monedaConv||'';
-      document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
-      document.getElementById('f-fecha-conv').value=o.fecha||'';
+      document.getElementById('f-importe-conv').value = o.importe||'';
+      document.getElementById('f-moneda-conv').value = o.monedaConv||'';
+      document.getElementById('f-fecha-liq').value = o.fechaLiq||'';
+      document.getElementById('f-fecha-conv').value = o.fecha||'';
     } else if (o.tab==='lic') {
-      document.getElementById('f-denominacion').value=o.denominacion||'';
-      document.getElementById('f-precio-tasa').value=o.precioTasa||'';
-      document.getElementById('f-cantidad').value=o.cantidad||'';
-      document.getElementById('f-moneda-lic').value=o.monedaLic||'';
+      document.getElementById('f-denominacion').value = o.denominacion||'';
+      document.getElementById('f-precio-tasa').value = o.precioTasa||'';
+      document.getElementById('f-cantidad').value = o.cantidad||'';
+      document.getElementById('f-moneda-lic').value = o.monedaLic||'';
     } else if (o.tab==='senebi') {
-      // Restaurar comitente compra
       selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
       document.getElementById('senebi-compra-text').textContent = (o.comitenteCompra||'') + ' · ' + (o.nombreCompra||'');
       document.getElementById('senebi-compra-display').style.display='flex';
       document.getElementById('senebi-compra-input').style.display='none';
-      // Restaurar comitente venta
       selectedSenebiVenta = {comitente:o.comitenteVenta||'', nombre:o.nombreVenta||''};
       document.getElementById('senebi-venta-text').textContent = (o.comitenteVenta||'') + ' · ' + (o.nombreVenta||'');
       document.getElementById('senebi-venta-display').style.display='flex';
       document.getElementById('senebi-venta-input').style.display='none';
-      document.getElementById('f-ticker').value=o.ticker||'';
-      document.getElementById('f-plazo').value=o.plazo||'';
-      document.getElementById('f-moneda-senebi').value=o.monedaSenebi||'';
-      document.getElementById('f-precio-mesa').value=o.precioMesa||'';
-      document.getElementById('f-precio-cliente').value=o.precioCliente||'';
-      document.getElementById('f-nominales').value=o.nominales||'';
+      document.getElementById('f-ticker').value = o.ticker||'';
+      document.getElementById('f-plazo').value = o.plazo||'';
+      document.getElementById('f-moneda-senebi').value = o.monedaSenebi||'';
+      document.getElementById('f-precio-mesa').value = o.precioMesa||'';
+      document.getElementById('f-precio-cliente').value = o.precioCliente||'';
+      document.getElementById('f-nominales').value = o.nominales||'';
     }
-    window._editingId=id; window._editingFbKey=o.fbKey;
-    document.getElementById('modal-title').textContent='Editando Orden '+id;
-    document.querySelector('.btn-submit').textContent='Guardar Cambios';
-    document.getElementById('modal').classList.add('open');
-  }, 200);
+
+    window._editingId = id;
+    window._editingFbKey = o.fbKey;
+    document.getElementById('modal-title').textContent = 'Editando Orden ' + o.id;
+    document.querySelector('.btn-submit').textContent = 'Guardar Cambios';
+  }, 50);
 }
 
 function renderTable() {
