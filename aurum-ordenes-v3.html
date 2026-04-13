@@ -1470,7 +1470,7 @@ function renderTable() {
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
 
     let extraCols = '';
-    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap">${o.fondo||'—'}</td>`;
+    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${o.fondo||''}">${o.fondo||'—'}</td>`;
     if (tab==='pagos') extraCols = `<td style="font-size:12px">${o.banco||'—'}</td><td><span class="tipo-badge">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td><td class="id-mono">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.denominacion||'—'}</td><td class="id-mono">${o.precioTasa||'—'}</td><td class="id-mono">${o.cantidad||'—'}</td><td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>`;
@@ -1492,7 +1492,7 @@ function renderTable() {
       <td class="id-mono">${o.fecha}</td>
       <td><span class="tipo-badge ${tipoClass}">${o.tipo}</span></td>
       ${tab!=='senebi' ? `<td class="id-mono">${o.comitente}</td>` : ''}
-      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>` : ''}
+      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.cliente}">${o.cliente}</td>` : ''}
       ${extraCols}
       ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)">${o.importe||'—'}</td>` : ''}
       <td>${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
