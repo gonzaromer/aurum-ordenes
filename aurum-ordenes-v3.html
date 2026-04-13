@@ -1470,7 +1470,7 @@ function renderTable() {
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
 
     let extraCols = '';
-    if (tab==='fci')   extraCols = `<td style="font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.fondo||'—'}</td>`;
+    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap">${o.fondo||'—'}</td>`;
     if (tab==='pagos') extraCols = `<td style="font-size:12px">${o.banco||'—'}</td><td><span class="tipo-badge">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td><td class="id-mono">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.denominacion||'—'}</td><td class="id-mono">${o.precioTasa||'—'}</td><td class="id-mono">${o.cantidad||'—'}</td><td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>`;
