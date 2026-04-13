@@ -1482,11 +1482,11 @@ function renderTable() {
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
 
     let extraCols = '';
-    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${o.fondo||''}">${o.fondo||'—'}</td>`;
-    if (tab==='pagos') extraCols = `<td style="font-size:12px" title="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" title="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
-    if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" title="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" title="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
-    if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" title="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" title="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" title="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
-    if (tab==='senebi') extraCols = `<td class="senebi-cte" title="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td class="senebi-cte" title="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700" title="${o.ticker||''}">${o.ticker||'—'}</td><td title="${o.plazo||''}">${o.plazo||'—'}</td><td title="${o.monedaSenebi||''}">${o.monedaSenebi||'—'}</td><td class="id-mono" title="${o.precioMesa||''}">${o.precioMesa||'—'}</td><td class="id-mono" title="${o.precioCliente||''}">${o.precioCliente||'—'}</td><td class="id-mono" title="${o.nominales||''}">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)" title="${o.monto||''}">${o.monto||'—'}</td>`;
+    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" data-tip="${o.fondo||''}">${o.fondo||'—'}</td>`;
+    if (tab==='pagos') extraCols = `<td style="font-size:12px" data-tip="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" data-tip="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
+    if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" data-tip="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" data-tip="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
+    if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" data-tip="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" data-tip="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" data-tip="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
+    if (tab==='senebi') extraCols = `<td class="senebi-cte" data-tip="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td class="senebi-cte" data-tip="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700" data-tip="${o.ticker||''}">${o.ticker||'—'}</td><td data-tip="${o.plazo||''}">${o.plazo||'—'}</td><td data-tip="${o.monedaSenebi||''}">${o.monedaSenebi||'—'}</td><td class="id-mono" data-tip="${o.precioMesa||''}">${o.precioMesa||'—'}</td><td class="id-mono" data-tip="${o.precioCliente||''}">${o.precioCliente||'—'}</td><td class="id-mono" data-tip="${o.nominales||''}">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)" data-tip="${o.monto||''}">${o.monto||'—'}</td>`;
 
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
     let statusCell = canChange
@@ -1500,30 +1500,20 @@ function renderTable() {
     const comercialCol = showComercialCol ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
 
     return `<tr>
-      <td class="id-mono" title="${o.id}">${o.id}</td>
-      <td class="id-mono" title="${o.fecha}">${o.fecha}</td>
-      <td><span class="tipo-badge ${tipoClass}" title="${o.tipo}">${o.tipo}</span></td>
-      ${tab!=='senebi' ? `<td class="id-mono" title="${o.comitente}">${o.comitente}</td>` : ''}
-      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.cliente}">${o.cliente}</td>` : ''}
+      <td class="id-mono" data-tip="${o.id}">${o.id}</td>
+      <td class="id-mono" data-tip="${o.fecha}">${o.fecha}</td>
+      <td><span class="tipo-badge ${tipoClass}" data-tip="${o.tipo}">${o.tipo}</span></td>
+      ${tab!=='senebi' ? `<td class="id-mono" data-tip="${o.comitente}">${o.comitente}</td>` : ''}
+      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.cliente}">${o.cliente}</td>` : ''}
       ${extraCols}
-      ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)" title="${o.importe||''}">${o.importe||'—'}</td>` : ''}
-      <td title="${o.prioridad||''}">${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
+      ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)" data-tip="${o.importe||''}">${o.importe||'—'}</td>` : ''}
+      <td data-tip="${o.prioridad||''}">${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
       <td style="min-width:160px;white-space:nowrap">${getBtns(o)}</td>
     </tr>`;
   }).join('');
 
-  // Tooltip solo cuando el texto está truncado
-  setTimeout(() => {
-    body.querySelectorAll('td').forEach(td => {
-      if (td.scrollWidth > td.clientWidth) {
-        td.title = td.textContent.trim();
-      } else {
-        td.removeAttribute('title');
-      }
-    });
-  }, 50);
 }
 
 function updateStatus(fbKey, val) {
@@ -1618,14 +1608,6 @@ function renderHistorial() {
     </tr>`;
   }).join('');
 
-  // Tooltip solo cuando el texto está truncado
-  document.querySelectorAll('#hist-body td').forEach(td => {
-    if (td.scrollWidth > td.clientWidth) {
-      td.title = td.textContent.trim();
-    } else {
-      td.removeAttribute('title');
-    }
-  });
 }
 
 function exportHistorialXLSX() {
@@ -2172,12 +2154,12 @@ document.addEventListener('click', function(e) {
 (function(){
   var tip = document.getElementById('aurum-tooltip');
   document.addEventListener('mouseover', function(e){
-    var td = e.target.closest('td[title]');
-    if(td && td.getAttribute('title')){
+    var td = e.target.closest('td[data-tip]');
+    if(td && td.getAttribute('data-tip')){
       var isSenebiCte = td.classList.contains('senebi-cte');
       var isTruncated = td.scrollWidth > td.clientWidth + 2;
       if(isSenebiCte || isTruncated){
-        tip.textContent = td.getAttribute('title');
+        tip.textContent = td.getAttribute('data-tip');
         tip.style.display = 'block';
         return;
       }
@@ -2191,7 +2173,7 @@ document.addEventListener('click', function(e) {
     }
   });
   document.addEventListener('mouseout', function(e){
-    if(e.target.closest('td[title]')) tip.style.display='none';
+    if(e.target.closest('td[data-tip]')) tip.style.display='none';
   });
 })();
 </script>
