@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AURUM VALORES — Sistema de Órdenes</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --navy: #1B2A6B; --navy-dark: #121D4E; --navy-light: #253580;
@@ -395,11 +396,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
   border-radius:6px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.2s;
 }
 .import-btn:hover{background:var(--teal-dark);}
-.clear-all-btn{
-  background:#fff;color:#E04B4B;border:1.5px solid #E04B4B;padding:7px 13px;
-  border-radius:6px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;transition:all 0.2s;
-}
-.clear-all-btn:hover{background:#E04B4B;color:#fff;}
 #excel-import-input{display:none;}
 .pw-row{display:flex;gap:7px;align-items:center;margin-top:6px;}
 .pw-field{
@@ -608,7 +604,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="fondos-count-lbl"></span>
                   <input type="file" id="excel-fondos-input" accept=".xlsx,.xls,.csv" onchange="importFondosExcel(event)" style="display:none">
                   <button class="import-btn" onclick="document.getElementById('excel-fondos-input').click()">⬆ Importar Excel</button>
-                  <button class="clear-all-btn" onclick="clearAllFondos()">🗑 Borrar todo</button>
                 </div>
               </div>
               <div class="admin-card-body">
@@ -628,7 +623,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="client-count-lbl"></span>
                   <input type="file" id="excel-import-input" accept=".xlsx,.xls" onchange="importClientsExcel(event)">
                   <button class="import-btn" onclick="document.getElementById('excel-import-input').click()">⬆ Importar Excel</button>
-                  <button class="clear-all-btn" onclick="clearAllClients()">🗑 Borrar todo</button>
                 </div>
               </div>
               <div class="admin-card-body">
@@ -2021,36 +2015,33 @@ function addFondo() {
 function removeFondo(idx) {
   fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
 }
-function clearAllFondos() {
-  if (!confirm('¿Estás seguro que querés borrar TODOS los fondos? Esta acción no se puede deshacer.')) return;
-  fondos = [];
-  renderFondosAdmin();
-  showToast('🗑 Lista de fondos vaciada');
-}
-
-function clearAllClients() {
-  if (!confirm('¿Estás seguro que querés borrar TODOS los comitentes? Esta acción no se puede deshacer.')) return;
-  clients = [];
-  renderClients();
-  showToast('🗑 Lista de comitentes vaciada');
-}
-
 function importFondosExcel(event) {
   const file = event.target.files[0];
-  if(!file) return;
+  if (!file) return;
+  showToast('Procesando archivo...');
   const reader = new FileReader();
   reader.onload = function(e) {
-    const lines = e.target.result.split('\n').filter(l=>l.trim());
-    let added=0;
-    lines.forEach(function(line) {
-      const name = line.trim().replace(/[";]/g,'');
-      if(name && !fondos.includes(name)) { fondos.push(name); added++; }
-    });
-    renderFondosAdmin();
-    showToast('✓ Importados: '+added+' fondos nuevos');
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      let added = 0;
+      rows.forEach(function(row) {
+        const name = (row[0] || '').toString().trim();
+        if (name && !fondos.includes(name)) {
+          fondos.push(name);
+          added++;
+        }
+      });
+      renderFondosAdmin();
+      showToast('✓ Importados: ' + added + ' fondos nuevos');
+    } catch(err) {
+      showToast('⚠ Error al leer el archivo');
+    }
   };
-  reader.readAsText(file,'UTF-8');
-  event.target.value='';
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
 }
 
 function renderClients() {
@@ -2081,38 +2072,36 @@ function addClient() {
 }
 
 // Import Excel clients
-async function importClientsExcel(event) {
+function importClientsExcel(event) {
   const file = event.target.files[0];
   if (!file) return;
-  showToast('Procesando Excel...');
+  showToast('Procesando archivo...');
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      // Parse CSV/simple text - for XLSX we read as text and parse
-      const text = e.target.result;
-      const lines = text.split('\n').filter(l=>l.trim());
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       let added = 0, updated = 0;
-      lines.forEach(line => {
-        // Format: "123-NOMBRE CLIENTE" or just text
-        const parts = line.trim().split('-');
-        if (parts.length >= 2) {
-          const num = parts[0].trim();
-          let nombre = parts.slice(1).join('-').trim();
-          const isInactive = nombre.toUpperCase().startsWith('INACTIVO ');
-          if (isInactive) nombre = nombre.slice(9).trim();
-          const activo = !isInactive;
-          const existing = clients.find(c=>c.comitente===num);
-          if (existing) { existing.nombre=nombre; existing.activo=activo; updated++; }
-          else { clients.push({comitente:num,nombre,activo}); added++; }
-        }
+      rows.forEach(function(row) {
+        // Columna A = N° comitente, Columna B = Nombre, Columna C (opcional) = INACTIVO
+        const num = (row[0] || '').toString().trim();
+        let nombre = (row[1] || '').toString().trim().toUpperCase();
+        const estado = (row[2] || '').toString().trim().toUpperCase();
+        const activo = estado !== 'INACTIVO';
+        if (!num || !nombre) return;
+        const existing = clients.find(c => c.comitente === num);
+        if (existing) { existing.nombre = nombre; existing.activo = activo; updated++; }
+        else { clients.push({ comitente: num, nombre: nombre, activo: activo }); added++; }
       });
       renderClients();
-      showToast(`✓ Importado: ${added} nuevos, ${updated} actualizados`);
+      showToast('✓ Importado: ' + added + ' nuevos, ' + updated + ' actualizados');
     } catch(err) {
       showToast('⚠ Error al leer el archivo');
     }
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsArrayBuffer(file);
   event.target.value = '';
 }
 
