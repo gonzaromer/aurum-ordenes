@@ -1721,8 +1721,8 @@ function renderFondoDd(list) {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
   if (!list.length) { dd.innerHTML = '<div class="client-dd-item" style="color:var(--text-muted)">Sin resultados</div>'; return; }
-  dd.innerHTML = list.map((f, i) =>
-    `<div class="client-dd-item" onclick="selectFondoByIdx(this)"  data-nombre="${f.replace(/"/g,'&quot;')}">${f}</div>`
+  dd.innerHTML = list.map(f =>
+    `<div class="client-dd-item" onmousedown="event.preventDefault();selectFondo(this.getAttribute('data-nombre'))" data-nombre="${f.replace(/"/g,'&quot;')}">${f}</div>`
   ).join('');
 }
 function selectFondoByIdx(el) {
