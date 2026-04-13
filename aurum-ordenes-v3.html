@@ -1501,6 +1501,15 @@ function renderTable() {
       <td style="min-width:160px;white-space:nowrap">${getBtns(o)}</td>
     </tr>`;
   }).join('');
+
+  // Tooltip solo cuando el texto está truncado
+  body.querySelectorAll('td').forEach(td => {
+    if (td.scrollWidth > td.clientWidth) {
+      td.title = td.textContent.trim();
+    } else {
+      td.removeAttribute('title');
+    }
+  });
 }
 
 function updateStatus(fbKey, val) {
