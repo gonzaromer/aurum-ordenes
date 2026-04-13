@@ -1832,9 +1832,9 @@ function populateBankSelect() {
 function submitOrder() {
   const tipo = document.getElementById('f-tipo').value;
   if (!tipo) { showToast('⚠ Seleccioná el tipo de operación'); return; }
-  if (!selectedClient && tab !== 'senebi') { showToast('⚠ Seleccioná un cliente'); return; }
 
   const tab = getTabName(currentView);
+  if (!selectedClient && tab !== 'senebi') { showToast('⚠ Seleccioná un cliente'); return; }
   orderCounter++;
   const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON',lic:'LIC',senebi:'SNB'};
   const prefix = prefixes[tab]||'ORD';
