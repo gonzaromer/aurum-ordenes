@@ -814,7 +814,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
         </div>
-        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr">
+        <div class="form-row thirds">
           <div class="form-group">
             <label class="form-label">Ticker *</label>
             <input class="form-input" id="f-ticker" placeholder="GD30...">
@@ -835,6 +835,8 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
               <option>DE CCL A MEP</option><option>DE MEP A CCL</option>
             </select>
           </div>
+        </div>
+        <div class="form-row thirds">
           <div class="form-group">
             <label class="form-label">Precio Mesa</label>
             <input class="form-input importe-field" id="f-precio-mesa" placeholder="0,00" oninput="fmtImporte(this)">
@@ -843,12 +845,12 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <label class="form-label">Precio Cliente</label>
             <input class="form-input importe-field" id="f-precio-cliente" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
           </div>
-        </div>
-        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Nominales</label>
             <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
           </div>
+        </div>
+        <div class="form-row full">
           <div class="form-group">
             <label class="form-label">Monto <span style="font-size:9px;color:var(--teal-dark)">(Nominales × Precio Cliente)</span></label>
             <input class="form-input importe-field" id="f-monto-senebi" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--teal-dark);font-weight:700;cursor:default">
