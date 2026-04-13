@@ -665,7 +665,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
       </div>
       <!-- Client search -->
       <div class="form-row full">
-        <div class="form-group">
+        <div class="form-group" id="cliente-group">
           <label class="form-label">Cliente / Comitente *</label>
           <div class="client-search-wrap">
             <div id="client-sel-display" style="display:none" class="client-selected-tag" onclick="clearClientSel()">
@@ -1247,6 +1247,7 @@ function showFields(type) {
   document.getElementById('conv-fields').style.display = (type==='conv') ? 'block':'none';
   document.getElementById('lic-fields').style.display    = (type==='lic')    ? 'block':'none';
   document.getElementById('senebi-fields').style.display = (type==='senebi') ? 'block':'none';
+  document.getElementById('cliente-group').style.display = (type==='senebi') ? 'none':'block';
 }
 
 function setFilter(f, el) {
@@ -1829,7 +1830,7 @@ function populateBankSelect() {
 function submitOrder() {
   const tipo = document.getElementById('f-tipo').value;
   if (!tipo) { showToast('⚠ Seleccioná el tipo de operación'); return; }
-  if (!selectedClient) { showToast('⚠ Seleccioná un cliente'); return; }
+  if (!selectedClient && tab !== 'senebi') { showToast('⚠ Seleccioná un cliente'); return; }
 
   const tab = getTabName(currentView);
   orderCounter++;
