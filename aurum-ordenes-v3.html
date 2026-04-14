@@ -1420,11 +1420,20 @@ function editOrder(id) {
   // Navegar a la vista correcta
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
+  setModalFields(tabMap[o.tab]||'fci-hoy');
 
-  // Abrir modal limpio primero
-  openModal();
+  // Reset manual de todos los campos del modal (sin llamar openModal que sobreescribe)
+  selectedClient = null; selectedFondo = null; selectedBanco = null;
+  selectedSenebiCompra = null; selectedSenebiVenta = null;
+  document.getElementById('client-modal-search').style.display = 'block';
+  document.getElementById('client-sel-display').style.display = 'none';
+  var fsd=document.getElementById('fondo-sel-display'); if(fsd) fsd.style.display='none';
+  var fsi=document.getElementById('fondo-search-input'); if(fsi){fsi.style.display='block';fsi.value='';}
+  var fdd=document.getElementById('fondo-dd'); if(fdd){fdd.innerHTML='';fdd.classList.remove('open');}
+  var bsd=document.getElementById('banco-sel-display'); if(bsd) bsd.style.display='none';
+  var bsi=document.getElementById('banco-search-input'); if(bsi){bsi.style.display='block';bsi.value='';}
 
-  // Sobreescribir campos con los datos de la orden (después del reset de openModal)
+  // Restaurar datos de la orden
   setTimeout(function() {
     // Cliente
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
@@ -1484,6 +1493,7 @@ function editOrder(id) {
     window._editingFbKey = o.fbKey;
     document.getElementById('modal-title').textContent = 'Editando Orden ' + o.id;
     document.querySelector('.btn-submit').textContent = 'Guardar Cambios';
+    document.getElementById('modal').classList.add('open');
   }, 50);
 }
 
@@ -1827,12 +1837,18 @@ function openFondoDd() {
   if (!dd) return;
   dd.classList.add('open');
   const q = (document.getElementById('fondo-search-input')?.value||'').toLowerCase().trim();
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 200));
 }
 function renderFondoDd(list) {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
-  if (!list.length) { dd.innerHTML = '<div class="client-option" style="color:var(--text-muted)">Sin resultados</div>'; return; }
+  if (!list.length) {
+    const msg = fondos.length === 0
+      ? 'Importá los fondos desde Panel Admin'
+      : 'Sin resultados';
+    dd.innerHTML = '<div class="client-option" style="color:var(--text-muted)">' + msg + '</div>';
+    return;
+  }
   dd.innerHTML = list.map(f =>
     `<div class="client-option" onmousedown="event.preventDefault();selectFondo(this.getAttribute('data-nombre'))" data-nombre="${f.replace(/"/g,'&quot;')}">${f}</div>`
   ).join('');
@@ -1845,7 +1861,7 @@ function filterFondos() {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
   dd.classList.add('open');
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 200));
 }
 function selectFondo(nombre) {
   selectedFondo = nombre;
@@ -2215,19 +2231,21 @@ window.__db = firebase.database();
 // Init passwords from Firebase
 initPasswords();
 
-// Cargar fondos y clientes desde Firebase al arrancar
-window.__db.ref('config/fondos').once('value', function(snap) {
+// Sincronización en tiempo real de fondos y clientes desde Firebase
+window.__db.ref('config/fondos').on('value', function(snap) {
   var data = snap.val();
   if (data && Array.isArray(data) && data.length > 0) {
     fondos = data;
-    console.log('✓ Fondos cargados desde Firebase: ' + fondos.length);
   }
 });
-window.__db.ref('config/clients').once('value', function(snap) {
+window.__db.ref('config/clients').on('value', function(snap) {
   var data = snap.val();
   if (data && Array.isArray(data) && data.length > 0) {
     clients = data;
-    console.log('✓ Clientes cargados desde Firebase: ' + clients.length);
+    // Si el panel admin está abierto, re-renderizar
+    if (typeof renderClients === 'function' && currentUser && currentView === 'admin') {
+      renderClients();
+    }
   }
 });
 
