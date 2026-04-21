@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AURUM VALORES — Sistema de Órdenes</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -396,11 +395,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
   border-radius:6px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.2s;
 }
 .import-btn:hover{background:var(--teal-dark);}
-.clear-all-btn{
-  background:#fff;color:#E04B4B;border:1.5px solid #E04B4B;padding:7px 13px;
-  border-radius:6px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;transition:all 0.2s;
-}
-.clear-all-btn:hover{background:#E04B4B;color:#fff;}
 #excel-import-input{display:none;}
 .pw-row{display:flex;gap:7px;align-items:center;margin-top:6px;}
 .pw-field{
@@ -609,7 +603,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="fondos-count-lbl"></span>
                   <input type="file" id="excel-fondos-input" accept=".xlsx,.xls,.csv" onchange="importFondosExcel(event)" style="display:none">
                   <button class="import-btn" onclick="document.getElementById('excel-fondos-input').click()">⬆ Importar Excel</button>
-                  <button class="clear-all-btn" onclick="clearAllFondos()">🗑 Borrar todo</button>
                 </div>
               </div>
               <div class="admin-card-body">
@@ -629,7 +622,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="client-count-lbl"></span>
                   <input type="file" id="excel-import-input" accept=".xlsx,.xls" onchange="importClientsExcel(event)">
                   <button class="import-btn" onclick="document.getElementById('excel-import-input').click()">⬆ Importar Excel</button>
-                  <button class="clear-all-btn" onclick="clearAllClients()">🗑 Borrar todo</button>
                 </div>
               </div>
               <div class="admin-card-body">
@@ -1237,7 +1229,7 @@ function setModalFields(view) {
     tipo.innerHTML = '<option value="">—</option><option>SUSCRIPCION</option><option>RESCATE</option>';
     showFields('fci');
   } else if (view === 'pagos-hoy') {
-    tipo.innerHTML = '<option value="">—</option><option>PAGO</option>';
+    tipo.innerHTML = '<option value="">—</option><option>PAGO</option><option>PAGO RESCATE</option><option>ECHEQ</option><option>CHEQUE FISICO</option>';
     showFields('pago');
   } else if (view === 'conv-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>CONVERSION</option>';
@@ -1252,7 +1244,25 @@ function setModalFields(view) {
 }
 function onTipoChange() {
   const t = document.getElementById('f-tipo').value;
-  if (t === 'PAGO') { showFields('pago'); }
+  if (t === 'PAGO' || t === 'PAGO RESCATE' || t === 'ECHEQ' || t === 'CHEQUE FISICO') {
+    showFields('pago');
+    const bancoWrap = document.getElementById('banco-wrap');
+    const bancoInput = document.getElementById('banco-search-input');
+    const isCheque = (t === 'ECHEQ' || t === 'CHEQUE FISICO');
+    if (bancoWrap) {
+      bancoWrap.style.opacity = isCheque ? '0.4' : '1';
+      bancoWrap.style.pointerEvents = isCheque ? 'none' : '';
+      bancoWrap.style.userSelect = isCheque ? 'none' : '';
+    }
+    if (isCheque) {
+      // Limpiar selección de banco si había algo elegido
+      selectedBanco = null;
+      const bsd = document.getElementById('banco-sel-display');
+      const bsi = document.getElementById('banco-search-input');
+      if (bsd) bsd.style.display = 'none';
+      if (bsi) { bsi.style.display = 'block'; bsi.value = ''; }
+    }
+  }
   else if (t === 'CONVERSION') showFields('conv');
   else if (t === 'LICITACION') showFields('lic');
   else if (t === 'SENEBI') showFields('senebi');
@@ -1415,86 +1425,41 @@ function deleteOrder(id) {
 function editOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
+  // Permission check
   if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
-
-  // Navegar a la vista correcta
-  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy'};
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
-  setModalFields(tabMap[o.tab]||'fci-hoy');
-
-  // Reset manual de todos los campos del modal (sin llamar openModal que sobreescribe)
-  selectedClient = null; selectedFondo = null; selectedBanco = null;
-  selectedSenebiCompra = null; selectedSenebiVenta = null;
-  document.getElementById('client-modal-search').style.display = 'block';
-  document.getElementById('client-sel-display').style.display = 'none';
-  var fsd=document.getElementById('fondo-sel-display'); if(fsd) fsd.style.display='none';
-  var fsi=document.getElementById('fondo-search-input'); if(fsi){fsi.style.display='block';fsi.value='';}
-  var fdd=document.getElementById('fondo-dd'); if(fdd){fdd.innerHTML='';fdd.classList.remove('open');}
-  var bsd=document.getElementById('banco-sel-display'); if(bsd) bsd.style.display='none';
-  var bsi=document.getElementById('banco-search-input'); if(bsi){bsi.style.display='block';bsi.value='';}
-
-  // Restaurar datos de la orden
   setTimeout(function() {
-    // Cliente
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
     document.getElementById('client-sel-text').textContent = o.comitente+' · '+o.cliente;
     document.getElementById('client-sel-display').style.display='flex';
     document.getElementById('client-modal-search').style.display='none';
-
-    // Campos comunes
     document.getElementById('f-tipo').value = o.tipo;
-    onTipoChange();
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
-
     if (o.tab==='fci') {
-      selectedFondo = o.fondo||'';
-      document.getElementById('fondo-sel-text').textContent = o.fondo||'';
-      document.getElementById('fondo-sel-display').style.display = o.fondo ? 'flex' : 'none';
-      document.getElementById('fondo-search-input').style.display = o.fondo ? 'none' : 'block';
-      document.getElementById('f-importe-fci').value = o.importe||'';
-      document.getElementById('f-fecha-fci').value = o.fecha||'';
+      document.getElementById('f-fondo').value=o.fondo||'';
+      document.getElementById('f-importe-fci').value=o.importe||'';
+      document.getElementById('f-fecha-fci').value=o.fecha||'';
     } else if (o.tab==='pagos') {
-      selectedBanco = o.banco||'';
-      document.getElementById('banco-sel-text').textContent = o.banco||'';
+      selectedBanco=o.banco||'';
+      document.getElementById('banco-sel-text').textContent=o.banco||'';
       document.getElementById('banco-sel-display').style.display='flex';
       document.getElementById('banco-search-input').style.display='none';
-      document.getElementById('f-moneda-pago').value = o.moneda||'';
-      document.getElementById('f-importe-pago').value = o.importe||'';
-      document.getElementById('f-fecha-pago').value = o.fecha||'';
+      document.getElementById('f-moneda-pago').value=o.moneda||'';
+      document.getElementById('f-importe-pago').value=o.importe||'';
+      document.getElementById('f-fecha-pago').value=o.fecha||'';
     } else if (o.tab==='conv') {
-      document.getElementById('f-importe-conv').value = o.importe||'';
-      document.getElementById('f-moneda-conv').value = o.monedaConv||'';
-      document.getElementById('f-fecha-liq').value = o.fechaLiq||'';
-      document.getElementById('f-fecha-conv').value = o.fecha||'';
-    } else if (o.tab==='lic') {
-      document.getElementById('f-denominacion').value = o.denominacion||'';
-      document.getElementById('f-precio-tasa').value = o.precioTasa||'';
-      document.getElementById('f-cantidad').value = o.cantidad||'';
-      document.getElementById('f-moneda-lic').value = o.monedaLic||'';
-    } else if (o.tab==='senebi') {
-      selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
-      document.getElementById('senebi-compra-text').textContent = (o.comitenteCompra||'') + ' · ' + (o.nombreCompra||'');
-      document.getElementById('senebi-compra-display').style.display='flex';
-      document.getElementById('senebi-compra-input').style.display='none';
-      selectedSenebiVenta = {comitente:o.comitenteVenta||'', nombre:o.nombreVenta||''};
-      document.getElementById('senebi-venta-text').textContent = (o.comitenteVenta||'') + ' · ' + (o.nombreVenta||'');
-      document.getElementById('senebi-venta-display').style.display='flex';
-      document.getElementById('senebi-venta-input').style.display='none';
-      document.getElementById('f-ticker').value = o.ticker||'';
-      document.getElementById('f-plazo').value = o.plazo||'';
-      document.getElementById('f-moneda-senebi').value = o.monedaSenebi||'';
-      document.getElementById('f-precio-mesa').value = o.precioMesa||'';
-      document.getElementById('f-precio-cliente').value = o.precioCliente||'';
-      document.getElementById('f-nominales').value = o.nominales||'';
+      document.getElementById('f-importe-conv').value=o.importe||'';
+      document.getElementById('f-moneda-conv').value=o.monedaConv||'';
+      document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
+      document.getElementById('f-fecha-conv').value=o.fecha||'';
     }
-
-    window._editingId = id;
-    window._editingFbKey = o.fbKey;
-    document.getElementById('modal-title').textContent = 'Editando Orden ' + o.id;
-    document.querySelector('.btn-submit').textContent = 'Guardar Cambios';
+    window._editingId=id; window._editingFbKey=o.fbKey;
+    document.getElementById('modal-title').textContent='Editando Orden '+id;
+    document.querySelector('.btn-submit').textContent='Guardar Cambios';
     document.getElementById('modal').classList.add('open');
-  }, 50);
+  }, 200);
 }
 
 function renderTable() {
@@ -1716,6 +1681,7 @@ function openModal() {
   const bsd=document.getElementById('banco-sel-display'); if(bsd) bsd.style.display='none';
   const bsi=document.getElementById('banco-search-input'); if(bsi){bsi.style.display='block';bsi.value='';}
   const bdd=document.getElementById('banco-dd'); if(bdd){bdd.innerHTML='';bdd.classList.remove('open');}
+  const bw=document.getElementById('banco-wrap'); if(bw){bw.style.opacity='';bw.style.pointerEvents='';bw.style.userSelect='';}
   // Reset fondo
   const fsd=document.getElementById('fondo-sel-display'); if(fsd) fsd.style.display='none';
   const fsi=document.getElementById('fondo-search-input'); if(fsi){fsi.style.display='block';fsi.value='';}
@@ -1837,18 +1803,12 @@ function openFondoDd() {
   if (!dd) return;
   dd.classList.add('open');
   const q = (document.getElementById('fondo-search-input')?.value||'').toLowerCase().trim();
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 200));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
 }
 function renderFondoDd(list) {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
-  if (!list.length) {
-    const msg = fondos.length === 0
-      ? 'Importá los fondos desde Panel Admin'
-      : 'Sin resultados';
-    dd.innerHTML = '<div class="client-option" style="color:var(--text-muted)">' + msg + '</div>';
-    return;
-  }
+  if (!list.length) { dd.innerHTML = '<div class="client-option" style="color:var(--text-muted)">Sin resultados</div>'; return; }
   dd.innerHTML = list.map(f =>
     `<div class="client-option" onmousedown="event.preventDefault();selectFondo(this.getAttribute('data-nombre'))" data-nombre="${f.replace(/"/g,'&quot;')}">${f}</div>`
   ).join('');
@@ -1861,7 +1821,7 @@ function filterFondos() {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
   dd.classList.add('open');
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 200));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
 }
 function selectFondo(nombre) {
   selectedFondo = nombre;
@@ -2062,71 +2022,33 @@ function renderFondosAdmin() {
       <button class="admin-action-btn" onclick="removeFondo(${fondos.indexOf(f)})" title="Eliminar">🗑</button>
     </div>`).join('');
 }
-function saveFondosToFirebase() {
-  if (window.__db) window.__db.ref('config/fondos').set(fondos);
-}
-function saveClientsToFirebase() {
-  if (window.__db) window.__db.ref('config/clients').set(clients);
-}
-
 function addFondo() {
   const name = document.getElementById('new-fondo-name').value.trim();
   if(!name) return;
   if(fondos.includes(name)) { showToast('Ese fondo ya existe'); return; }
   fondos.push(name);
   document.getElementById('new-fondo-name').value='';
-  saveFondosToFirebase();
   renderFondosAdmin(); showToast('✓ Fondo "'+name+'" agregado');
 }
 function removeFondo(idx) {
-  fondos.splice(idx,1);
-  saveFondosToFirebase();
-  renderFondosAdmin(); showToast('Fondo eliminado');
+  fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
 }
-function clearAllFondos() {
-  if (!confirm('¿Estás seguro que querés borrar TODOS los fondos? Esta acción no se puede deshacer.')) return;
-  fondos = [];
-  saveFondosToFirebase();
-  renderFondosAdmin();
-  showToast('🗑 Lista de fondos vaciada');
-}
-
-function clearAllClients() {
-  if (!confirm('¿Estás seguro que querés borrar TODOS los comitentes? Esta acción no se puede deshacer.')) return;
-  clients = [];
-  saveClientsToFirebase();
-  renderClients();
-  showToast('🗑 Lista de comitentes vaciada');
-}
-
 function importFondosExcel(event) {
   const file = event.target.files[0];
-  if (!file) return;
-  showToast('Procesando archivo...');
+  if(!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
-    try {
-      const workbook = XLSX.read(e.target.result, { type: 'binary' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-      let added = 0;
-      const skip = ['advertencia', 'p/e pago', 'rendimientos atribuidos'];
-      rows.forEach(function(row) {
-        const name = (row[0] || '').toString().trim();
-        if (!name) return;
-        const lower = name.toLowerCase();
-        if (skip.some(function(s){ return lower.startsWith(s); })) return;
-        if (!fondos.includes(name)) { fondos.push(name); added++; }
-      });
-      saveFondosToFirebase();
-      renderFondosAdmin();
-      showToast('✓ Importados: ' + added + ' fondos');
-    } catch(err) {
-      showToast('⚠ Error al leer el archivo: ' + err.message);
-    }
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    let added=0;
+    lines.forEach(function(line) {
+      const name = line.trim().replace(/[";]/g,'');
+      if(name && !fondos.includes(name)) { fondos.push(name); added++; }
+    });
+    renderFondosAdmin();
+    showToast('✓ Importados: '+added+' fondos nuevos');
   };
-  reader.readAsBinaryString(file);
-  event.target.value = '';
+  reader.readAsText(file,'UTF-8');
+  event.target.value='';
 }
 
 function renderClients() {
@@ -2143,7 +2065,7 @@ function renderClients() {
 }
 function toggleClient(num) {
   const c = clients.find(x=>x.comitente===num);
-  if (c) { c.activo=!c.activo; saveClientsToFirebase(); renderClients(); showToast('Cliente '+(c.activo?'reactivado':'dado de baja')); }
+  if (c) { c.activo=!c.activo; renderClients(); showToast('Cliente '+(c.activo?'reactivado':'dado de baja')); }
 }
 function addClient() {
   const num=document.getElementById('new-client-num').value.trim();
@@ -2153,47 +2075,42 @@ function addClient() {
   clients.push({comitente:num,nombre:name.toUpperCase(),activo:true});
   document.getElementById('new-client-num').value='';
   document.getElementById('new-client-name').value='';
-  saveClientsToFirebase();
   renderClients(); showToast('✓ Cliente "'+name+'" ('+num+') agregado');
 }
 
 // Import Excel clients
-function importClientsExcel(event) {
+async function importClientsExcel(event) {
   const file = event.target.files[0];
   if (!file) return;
-  showToast('Procesando archivo...');
+  showToast('Procesando Excel...');
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const workbook = XLSX.read(e.target.result, { type: 'binary' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      // Parse CSV/simple text - for XLSX we read as text and parse
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l=>l.trim());
       let added = 0, updated = 0;
-      rows.forEach(function(row, idx) {
-        // Saltear fila de encabezado
-        const col0 = (row[0] || '').toString().trim();
-        if (idx === 0 && isNaN(Number(col0))) return;
-        const num = col0;
-        let nombre = (row[1] || '').toString().trim().toUpperCase();
-        if (!num || !nombre) return;
-        // Detectar inactivo por prefijo en el nombre
-        let activo = true;
-        if (nombre.startsWith('INACTIVO ')) {
-          activo = false;
-          nombre = nombre.slice(9).trim();
+      lines.forEach(line => {
+        // Format: "123-NOMBRE CLIENTE" or just text
+        const parts = line.trim().split('-');
+        if (parts.length >= 2) {
+          const num = parts[0].trim();
+          let nombre = parts.slice(1).join('-').trim();
+          const isInactive = nombre.toUpperCase().startsWith('INACTIVO ');
+          if (isInactive) nombre = nombre.slice(9).trim();
+          const activo = !isInactive;
+          const existing = clients.find(c=>c.comitente===num);
+          if (existing) { existing.nombre=nombre; existing.activo=activo; updated++; }
+          else { clients.push({comitente:num,nombre,activo}); added++; }
         }
-        const existing = clients.find(function(c){ return c.comitente === num; });
-        if (existing) { existing.nombre = nombre; existing.activo = activo; updated++; }
-        else { clients.push({ comitente: num, nombre: nombre, activo: activo }); added++; }
       });
-      saveClientsToFirebase();
       renderClients();
-      showToast('✓ Importado: ' + added + ' nuevos, ' + updated + ' actualizados');
+      showToast(`✓ Importado: ${added} nuevos, ${updated} actualizados`);
     } catch(err) {
-      showToast('⚠ Error al leer el archivo: ' + err.message);
+      showToast('⚠ Error al leer el archivo');
     }
   };
-  reader.readAsBinaryString(file);
+  reader.readAsText(file, 'UTF-8');
   event.target.value = '';
 }
 
@@ -2230,24 +2147,6 @@ window.__db = firebase.database();
 
 // Init passwords from Firebase
 initPasswords();
-
-// Sincronización en tiempo real de fondos y clientes desde Firebase
-window.__db.ref('config/fondos').on('value', function(snap) {
-  var data = snap.val();
-  if (data && Array.isArray(data) && data.length > 0) {
-    fondos = data;
-  }
-});
-window.__db.ref('config/clients').on('value', function(snap) {
-  var data = snap.val();
-  if (data && Array.isArray(data) && data.length > 0) {
-    clients = data;
-    // Si el panel admin está abierto, re-renderizar
-    if (typeof renderClients === 'function' && currentUser && currentView === 'admin') {
-      renderClients();
-    }
-  }
-});
 
 // Realtime orders listener
 window.__db.ref('ordenes').on('value', function(snapshot) {
