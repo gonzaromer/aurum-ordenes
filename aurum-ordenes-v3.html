@@ -1335,24 +1335,33 @@ function showFields(type) {
   document.getElementById('cliente-group').style.display = (type==='senebi') ? 'none':'block';
 }
 
-function addHabilDays(date, days) {
-  // Suma dias habiles (lun-vie) saltando feriados argentinos conocidos
-  var d = new Date(date);
+function addHabilDays(dateStr, days) {
+  // Parsear la fecha como local (evitar problema UTC-3)
+  var parts = dateStr.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
   var added = 0;
   while (added < days) {
     d.setDate(d.getDate() + 1);
     var dow = d.getDay();
-    if (dow !== 0 && dow !== 6) added++; // saltar sabado y domingo
+    if (dow !== 0 && dow !== 6) added++; // saltar sabado (6) y domingo (0)
   }
-  return d.toISOString().split('T')[0];
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
 }
 
 function onMonedaConvChange() {
   const moneda = document.getElementById('f-moneda-conv').value;
   const fechaLiq = document.getElementById('f-fecha-liq');
   const fechaBase = document.getElementById('f-fecha-conv').value || TODAY;
-  if (moneda === 'MEP' && fechaLiq) {
+  if (!fechaLiq) return;
+  if (moneda === 'MEP') {
     fechaLiq.value = addHabilDays(fechaBase, 2);
+  } else if (moneda === 'CABLE') {
+    fechaLiq.value = fechaBase; // mismo dia
+  } else {
+    fechaLiq.value = '';
   }
 }
 
