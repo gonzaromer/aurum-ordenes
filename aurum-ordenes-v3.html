@@ -2139,7 +2139,7 @@ function openFondoDd() {
   if (!dd) return;
   dd.classList.add('open');
   const q = (document.getElementById('fondo-search-input')?.value||'').toLowerCase().trim();
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)));
 }
 function renderFondoDd(list) {
   const dd = document.getElementById('fondo-dd');
@@ -2157,7 +2157,7 @@ function filterFondos() {
   const dd = document.getElementById('fondo-dd');
   if (!dd) return;
   dd.classList.add('open');
-  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)).slice(0, 30));
+  renderFondoDd(fondos.filter(f => !q || f.toLowerCase().includes(q)));
 }
 function selectFondo(nombre) {
   selectedFondo = nombre;
