@@ -841,7 +841,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="form-row" id="senebi-row-monto" style="display:none">
           <div class="form-group">
             <label class="form-label" id="lbl-senebi-monto">Monto *</label>
-            <input class="form-input importe-field" id="f-senebi-monto" placeholder="0,00" oninput="fmtImporte(this);calcResultadoSenebi()">
+            <input class="form-input importe-field" id="f-senebi-monto" placeholder="0,00" oninput="fmtSenebi(this);calcResultadoSenebi()">
           </div>
           <div class="form-group">
             <label class="form-label">Plazo *</label>
@@ -872,17 +872,29 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 
         <!-- FORMULARIO CON MESA -->
         <div id="senebi-form-mesa" style="display:none">
-          <div class="form-row thirds">
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label">TC Mesa *</label>
-              <input class="form-input importe-field" id="f-tc-mesa" placeholder="0,00" oninput="fmtImporte(this);calcResultadoSenebi()">
+              <input class="form-input importe-field" id="f-tc-mesa" placeholder="0,0000000" oninput="fmtSenebi(this);calcResultadoSenebi()">
             </div>
             <div class="form-group">
               <label class="form-label">TC Cliente *</label>
-              <input class="form-input importe-field" id="f-tc-cliente" placeholder="0,00" oninput="fmtImporte(this);calcResultadoSenebi()">
+              <input class="form-input importe-field" id="f-tc-cliente" placeholder="0,0000000" oninput="fmtSenebi(this);calcResultadoSenebi()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ARS Mesa <span style="font-size:9px;color:var(--text-muted)">(USD x TC Mesa)</span></label>
+              <input class="form-input" id="f-ars-mesa" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
             </div>
             <div class="form-group">
-              <label class="form-label" style="color:var(--teal-dark);font-weight:800">Resultado $</label>
+              <label class="form-label">ARS Cliente <span style="font-size:9px;color:var(--text-muted)">(USD x TC Cliente)</span></label>
+              <input class="form-input" id="f-ars-cliente" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800">Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(diferencia ARS Cliente - ARS Mesa)</span></label>
               <input class="form-input" id="f-resultado-mesa" placeholder="0,00" readonly
                 style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
             </div>
@@ -904,11 +916,11 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Precio Bono ARS *</label>
-              <input class="form-input importe-field" id="f-precio-ars" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
+              <input class="form-input importe-field" id="f-precio-ars" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
             </div>
             <div class="form-group">
               <label class="form-label">Precio Bono USD *</label>
-              <input class="form-input importe-field" id="f-precio-usd" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
+              <input class="form-input importe-field" id="f-precio-usd" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
             </div>
           </div>
           <div class="form-row">
@@ -1135,6 +1147,16 @@ function fmtImporte(input) {
     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   }
   input.value = parts.length > 1 ? intPart + ',' + parts[1].slice(0,2) : intPart;
+}
+function fmtSenebi(input) {
+  // Permite hasta 7 decimales, sin separador de miles para no interferir con decimales largos
+  let val = input.value.replace(/[^0-9,]/g,'');
+  let parts = val.split(',');
+  let intPart = parts[0].replace(/\./g,'');
+  if (intPart.length > 3) {
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  }
+  input.value = parts.length > 1 ? intPart + ',' + parts[1].slice(0,7) : intPart;
 }
 function fmtImporteConv(input) {
   if (input.value.toLowerCase().startsWith('l')) {
@@ -1398,12 +1420,12 @@ let currentSenebiTipo = null;
 
 // Etiquetas de monto segun operacion
 const senebiMontoLabels = {
-  'compra-mep':       'Monto ARS (entrega cliente)',
-  'compra-cable':     'Monto ARS (entrega cliente)',
-  'venta-mep':        'Monto MEP (entrega cliente)',
-  'venta-cable':      'Monto CABLE (entrega cliente)',
-  'canje-mep-cable':  'Monto MEP (entrega cliente)',
-  'canje-cable-mep':  'Monto CABLE (entrega cliente)',
+  'compra-mep':       'USD MEP a comprar',
+  'compra-cable':     'USD CABLE a comprar',
+  'venta-mep':        'USD MEP a vender',
+  'venta-cable':      'USD CABLE a vender',
+  'canje-mep-cable':  'USD MEP a canjear',
+  'canje-cable-mep':  'USD CABLE a canjear',
 };
 
 function onSenebiOperacionChange() {
@@ -1443,20 +1465,30 @@ function setSenebiTipo(tipo) {
   }
 }
 
-// Resultado con mesa: diferencia de TC x monto
+// Resultado con mesa
 function calcResultadoSenebi() {
-  const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
-  const monto    = parse('f-senebi-monto');
-  const tcMesa   = parse('f-tc-mesa');
-  const tcCliente= parse('f-tc-cliente');
-  const fmt = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const parse = id => {
+    const v = (document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.');
+    return parseFloat(v) || 0;
+  };
+  const montoUSD  = parse('f-senebi-monto');   // USD que el cliente compra/vende
+  const tcMesa    = parse('f-tc-mesa');
+  const tcCliente = parse('f-tc-cliente');
+  const fmt2 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+
+  // ARS a debitar/acreditar = USD x TC Cliente
+  const arsCliente = document.getElementById('f-ars-cliente');
+  if (arsCliente) arsCliente.value = (montoUSD > 0 && tcCliente > 0) ? fmt2(montoUSD * tcCliente) : '';
+
+  // ARS mesa = USD x TC Mesa
+  const arsMesa = document.getElementById('f-ars-mesa');
+  if (arsMesa) arsMesa.value = (montoUSD > 0 && tcMesa > 0) ? fmt2(montoUSD * tcMesa) : '';
+
+  // Resultado = diferencia
   const res = document.getElementById('f-resultado-mesa');
   if (res) {
-    if (monto > 0 && tcMesa > 0 && tcCliente > 0) {
-      // resultado = diferencia de TC aplicada al monto en USD equivalente
-      const montoUSD = monto / tcMesa;
-      const resultado = Math.abs(tcCliente - tcMesa) * montoUSD;
-      res.value = fmt(resultado);
+    if (montoUSD > 0 && tcMesa > 0 && tcCliente > 0) {
+      res.value = fmt2(Math.abs(montoUSD * tcCliente - montoUSD * tcMesa));
     } else {
       res.value = '';
     }
@@ -1469,13 +1501,14 @@ function calcSenebiDirecto() {
   const nominales = parse('f-nominales');
   const precioARS = parse('f-precio-ars');
   const precioUSD = parse('f-precio-usd');
-  const fmt = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const fmt2 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const fmt7 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:7}) : '';
   const el1 = document.getElementById('f-monto-ars-dir');
   const el2 = document.getElementById('f-monto-usd-dir');
   const el3 = document.getElementById('f-tc-implicito');
-  if (el1) el1.value = fmt(nominales * precioARS);
-  if (el2) el2.value = fmt(nominales * precioUSD);
-  if (el3) el3.value = (precioARS > 0 && precioUSD > 0) ? fmt(precioARS / precioUSD) : '';
+  if (el1) el1.value = fmt2(nominales * precioARS);
+  if (el2) el2.value = fmt2(nominales * precioUSD);
+  if (el3) el3.value = (precioARS > 0 && precioUSD > 0) ? fmt7(precioARS / precioUSD) : '';
 }
 
 function calcMonto() { /* legacy */ }
@@ -1873,7 +1906,7 @@ function openModal() {
   var fd=document.getElementById('senebi-form-directo'); if(fd) fd.style.display='none';
   var rmt=document.getElementById('senebi-row-monto'); if(rmt) rmt.style.display='none';
   var stw=document.getElementById('senebi-tipo-wrap'); if(stw) stw.style.display='none';
-  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-resultado-mesa','f-ticker','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
   const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
   document.getElementById('modal-title').textContent = titles[currentView] || 'Nueva Orden';
