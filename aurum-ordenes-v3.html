@@ -603,6 +603,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                 <div style="display:flex;gap:8px;align-items:center">
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="fondos-count-lbl"></span>
                   <input type="file" id="excel-fondos-input" accept=".xlsx,.xls,.csv" onchange="importFondosExcel(event)" style="display:none">
+                  <button class="import-btn" style="background:#E04B4B;border-color:#E04B4B;color:#fff" onclick="clearAllFondos()">🗑 Borrar todo</button>
                   <button class="import-btn" onclick="document.getElementById('excel-fondos-input').click()">⬆ Importar Excel</button>
                 </div>
               </div>
@@ -621,7 +622,8 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                 <div class="admin-card-title">👤 Clientes / Comitentes</div>
                 <div style="display:flex;gap:8px;align-items:center">
                   <span style="font-size:11px;color:var(--text-muted);font-weight:600" id="client-count-lbl"></span>
-                  <input type="file" id="excel-import-input" accept=".xlsx,.xls" onchange="importClientsExcel(event)">
+                  <input type="file" id="excel-import-input" accept=".xlsx,.xls" onchange="importClientsExcel(event)" style="display:none">
+                  <button class="import-btn" style="background:#E04B4B;border-color:#E04B4B;color:#fff" onclick="clearAllClientes()">🗑 Borrar todo</button>
                   <button class="import-btn" onclick="document.getElementById('excel-import-input').click()">⬆ Importar Excel</button>
                 </div>
               </div>
@@ -2393,6 +2395,34 @@ function addFondo() {
 function removeFondo(idx) {
   fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
 }
+function clearAllFondos() {
+  if (!confirm('¿Borrar todos los fondos? Esta acción no se puede deshacer.')) return;
+  fondos = [];
+  if (window.__db) {
+    window.__db.ref('fondos').set([]).then(function(){
+      renderFondosAdmin();
+      showToast('✓ Fondos eliminados');
+    });
+  } else {
+    renderFondosAdmin();
+    showToast('✓ Fondos eliminados');
+  }
+}
+
+function clearAllClientes() {
+  if (!confirm('¿Borrar todos los clientes? Esta acción no se puede deshacer.')) return;
+  clients = [];
+  if (window.__db) {
+    window.__db.ref('clientes').set([]).then(function(){
+      renderClients();
+      showToast('✓ Clientes eliminados');
+    });
+  } else {
+    renderClients();
+    showToast('✓ Clientes eliminados');
+  }
+}
+
 function importFondosExcel(event) {
   const file = event.target.files[0];
   if (!file) return;
