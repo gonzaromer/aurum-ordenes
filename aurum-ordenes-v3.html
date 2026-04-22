@@ -761,7 +761,10 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Importe a Convertir</label>
-            <input class="form-input importe-field" id="f-importe-conv" placeholder="0,00 o Liquidez" oninput="fmtImporteConv(this)">
+            <div style="display:flex;gap:6px;align-items:center">
+              <input class="form-input importe-field" id="f-importe-conv" placeholder="0,00" oninput="fmtImporteConv(this)" style="flex:1">
+              <button type="button" id="btn-liq-conv" onclick="toggleLiquidez('f-importe-conv','btn-liq-conv')" style="white-space:nowrap;padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s">Liquidez</button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Moneda Conversión *</label>
@@ -948,6 +951,23 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <div class="form-group">
               <label class="form-label" style="color:var(--teal-dark);font-weight:800">TC Implicito <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(P.ARS / P.USD)</span></label>
               <input class="form-input" id="f-tc-implicito" placeholder="0,00" readonly
+                style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" id="lbl-precio-ppt">Precio PPT (ARS) <span style="font-size:9px;color:var(--text-muted)">Nom. x P.PPT</span></label>
+              <input class="form-input importe-field" id="f-precio-ppt" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto PPT <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.PPT)</span></label>
+              <input class="form-input" id="f-monto-ppt" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800">Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto ARS SENEBI - Monto PPT)</span></label>
+              <input class="form-input" id="f-resultado-directo" placeholder="0,00" readonly
                 style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
             </div>
           </div>
@@ -1549,14 +1569,21 @@ function calcSenebiDirecto() {
   const nominales = parse('f-nominales');
   const precioARS = parse('f-precio-ars');
   const precioUSD = parse('f-precio-usd');
+  const precioPPT = parse('f-precio-ppt');
   const fmt2 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
   const fmt7 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:7}) : '';
+  const montoARS = nominales * precioARS;
+  const montoPPT = nominales * precioPPT;
   const el1 = document.getElementById('f-monto-ars-dir');
   const el2 = document.getElementById('f-monto-usd-dir');
   const el3 = document.getElementById('f-tc-implicito');
-  if (el1) el1.value = fmt2(nominales * precioARS);
+  const el4 = document.getElementById('f-monto-ppt');
+  const el5 = document.getElementById('f-resultado-directo');
+  if (el1) el1.value = fmt2(montoARS);
   if (el2) el2.value = fmt2(nominales * precioUSD);
   if (el3) el3.value = (precioARS > 0 && precioUSD > 0) ? fmt7(precioARS / precioUSD) : '';
+  if (el4) el4.value = precioPPT > 0 ? fmt2(montoPPT) : '';
+  if (el5) el5.value = (montoARS > 0 && montoPPT > 0) ? fmt2(Math.abs(montoARS - montoPPT)) : '';
 }
 
 function calcMonto() { /* legacy */ }
@@ -1659,7 +1686,7 @@ function editOrder(id) {
   if (!o) return;
   // Permission check
   if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
-  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy'};
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',senebi:'senebi-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
@@ -1670,7 +1697,6 @@ function editOrder(id) {
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
-      document.getElementById('f-fondo').value=o.fondo||'';
       document.getElementById('f-importe-fci').value=o.importe||'';
       document.getElementById('f-fecha-fci').value=o.fecha||'';
     } else if (o.tab==='pagos') {
@@ -1686,6 +1712,42 @@ function editOrder(id) {
       document.getElementById('f-moneda-conv').value=o.monedaConv||'';
       document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
       document.getElementById('f-fecha-conv').value=o.fecha||'';
+    } else if (o.tab==='senebi') {
+      // Restaurar comitente
+      selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
+      document.getElementById('senebi-compra-text').textContent = (o.comitenteCompra||'') + ' · ' + (o.nombreCompra||'');
+      document.getElementById('senebi-compra-display').style.display='flex';
+      document.getElementById('senebi-compra-input').style.display='none';
+      // Restaurar tipo operacion y mostrar campos
+      var fso = document.getElementById('f-senebi-operacion');
+      if (fso) { fso.value = o.senebiOperacion||''; onSenebiOperacionChange(); }
+      // Restaurar plazo y monto
+      var fp = document.getElementById('f-plazo'); if(fp) fp.value = o.plazo||'';
+      var fm = document.getElementById('f-senebi-monto'); if(fm) fm.value = o.montoSenebi||'';
+      // Restaurar metodo (con mesa / directo)
+      if (o.senebiTipo) {
+        setSenebiTipo(o.senebiTipo);
+        if (o.senebiTipo==='mesa') {
+          var el; 
+          el=document.getElementById('f-tc-mesa'); if(el) el.value=o.tcMesa||'';
+          el=document.getElementById('f-tc-cliente'); if(el) el.value=o.tcCliente||'';
+          el=document.getElementById('f-ars-mesa'); if(el) el.value=o.arsMesa||'';
+          el=document.getElementById('f-ars-cliente'); if(el) el.value=o.arsCliente||'';
+          el=document.getElementById('f-resultado-mesa'); if(el) el.value=o.resultado||'';
+        } else if (o.senebiTipo==='directo') {
+          var el;
+          el=document.getElementById('f-ticker-base'); if(el){ el.value=o.ticker||''; onTickerBaseChange(); }
+          el=document.getElementById('f-nominales'); if(el) el.value=o.nominales||'';
+          el=document.getElementById('f-precio-ars'); if(el) el.value=o.precioArs||'';
+          el=document.getElementById('f-precio-usd'); if(el) el.value=o.precioUsd||'';
+          el=document.getElementById('f-precio-ppt'); if(el) el.value=o.precioPpt||'';
+          el=document.getElementById('f-monto-ars-dir'); if(el) el.value=o.montoArs||'';
+          el=document.getElementById('f-monto-usd-dir'); if(el) el.value=o.montoUsd||'';
+          el=document.getElementById('f-monto-ppt'); if(el) el.value=o.montoPpt||'';
+          el=document.getElementById('f-tc-implicito'); if(el) el.value=o.tcImplicito||'';
+          el=document.getElementById('f-resultado-directo'); if(el) el.value=o.resultado||'';
+        }
+      }
     }
     window._editingId=id; window._editingFbKey=o.fbKey;
     document.getElementById('modal-title').textContent='Editando Orden '+id;
@@ -1716,7 +1778,7 @@ function renderTable() {
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
-  if (tab==='senebi') cols.push('Comitente','Operacion','Metodo','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','TC / TC Imp.','Monto ARS','Monto USD','Resultado');
+  if (tab==='senebi') cols.push('Comitente','Operacion','Metodo','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','P.PPT','TC / TC Imp.','Monto ARS','Monto USD','Monto PPT','Resultado');
   if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
   cols.push('Prioridad','Estado');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
@@ -1753,7 +1815,7 @@ function renderTable() {
       const tcShow   = o.senebiTipo==='mesa' ? (o.tcCliente||'—') : (o.tcImplicito||'—');
       const montoArs = o.senebiTipo==='mesa' ? (o.arsCliente||'—') : (o.montoArs||'—');
       const montoUsd = o.senebiTipo==='mesa' ? (o.montoSenebi||'—') : (o.montoUsd||'—');
-      const resultado= o.senebiTipo==='mesa' ? (o.resultado||'—') : '—';
+      const resultado= o.resultado||'—';
       // Directo
       const tickerArs = o.tickerArs||'—';
       const tickerUsd = o.tickerUsd||'—';
@@ -1769,9 +1831,11 @@ function renderTable() {
         + `<td class="id-mono">${nominales}</td>`
         + `<td class="id-mono" style="font-size:11px">${pArs}</td>`
         + `<td class="id-mono" style="font-size:11px">${pUsd}</td>`
+        + `<td class="id-mono" style="font-size:11px">${o.precioPpt||'—'}</td>`
         + `<td class="id-mono" style="color:var(--teal-dark);font-weight:700">${tcShow}</td>`
         + `<td class="id-mono" style="font-weight:700">${montoArs}</td>`
         + `<td class="id-mono" style="font-weight:700">${montoUsd}</td>`
+        + `<td class="id-mono" style="font-weight:700">${o.montoPpt||'—'}</td>`
         + `<td class="id-mono" style="color:var(--teal-dark);font-weight:800">${resultado}</td>`;
     }
 
@@ -1945,7 +2009,7 @@ function openModal() {
   const bdd=document.getElementById('banco-dd'); if(bdd){bdd.innerHTML='';bdd.classList.remove('open');}
   const bw=document.getElementById('banco-wrap'); if(bw){bw.style.opacity='';bw.style.pointerEvents='';bw.style.userSelect='';}
   // Reset liquidez buttons
-  ['btn-liq-fci','btn-liq-pago'].forEach(function(id){var el=document.getElementById(id);if(el){el.style.background='var(--surface2)';el.style.color='var(--text-muted)';el.style.borderColor='var(--border)';}});
+  ['btn-liq-fci','btn-liq-pago','btn-liq-conv'].forEach(function(id){var el=document.getElementById(id);if(el){el.style.background='var(--surface2)';el.style.color='var(--text-muted)';el.style.borderColor='var(--border)';}});
   // Reset moneda FCI
   var mfci=document.getElementById('f-moneda-fci');if(mfci)mfci.value='';
   // Reset fondo
@@ -1970,7 +2034,7 @@ function openModal() {
   var fd=document.getElementById('senebi-form-directo'); if(fd) fd.style.display='none';
   var rmt=document.getElementById('senebi-row-monto'); if(rmt) rmt.style.display='none';
   var stw=document.getElementById('senebi-tipo-wrap'); if(stw) stw.style.display='none';
-  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito','f-precio-ppt','f-monto-ppt','f-resultado-directo'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
   const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
   document.getElementById('modal-title').textContent = titles[currentView] || 'Nueva Orden';
@@ -2184,7 +2248,7 @@ function submitOrder() {
     tcCliente:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-tc-cliente')?.value||'') : '',
     arsMesa:      tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-ars-mesa')?.value||'') : '',
     arsCliente:   tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-ars-cliente')?.value||'') : '',
-    resultado:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : '',
+
     // Directo
     ticker:        tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker-base')?.value||'') : '',
     tickerArs:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker-ars')?.value||'') : '',
@@ -2195,6 +2259,9 @@ function submitOrder() {
     montoArs:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ars-dir')?.value||'') : '',
     montoUsd:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-usd-dir')?.value||'') : '',
     tcImplicito:  tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-tc-implicito')?.value||'') : '',
+    precioPpt:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ppt')?.value||'') : '',
+    montoPpt:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ppt')?.value||'') : '',
+    resultado:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-resultado-directo')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : ''),
     monto:        tab==='senebi' ? (document.getElementById('f-senebi-monto')?.value||'') : '',
   };
 
