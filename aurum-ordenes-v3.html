@@ -1289,7 +1289,7 @@ function setModalFields(view) {
     tipo.innerHTML = '<option value="">—</option><option>SUSCRIPCION</option><option>RESCATE</option>';
     showFields('fci');
   } else if (view === 'pagos-hoy') {
-    tipo.innerHTML = '<option value="">—</option><option>PAGO</option>';
+    tipo.innerHTML = '<option value="">—</option><option>PAGO</option><option>PAGO RESCATE</option><option>ECHEQ</option><option>CHEQUE FISICO</option>';
     showFields('pago');
   } else if (view === 'conv-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>CONVERSION</option>';
@@ -1617,7 +1617,7 @@ function editOrder(id) {
   if (!o) return;
   // Permission check
   if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
-  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',senebi:'senebi-hoy'};
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
@@ -1705,7 +1705,7 @@ function renderTable() {
   // Columns: ID → Fecha → Tipo → Comitente → Cliente → [extra] → Importe → [Moneda] → Prioridad → Estado → Comercial(admin)
   let cols = ['ID','Fecha','Tipo'];
   if (tab!=='senebi') cols.push('Comitente','Cliente');
-  if (tab==='fci')    cols.push('Fondo');
+  if (tab==='fci')    cols.push('Fondo','Moneda');
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
@@ -1732,7 +1732,7 @@ function renderTable() {
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
 
     let extraCols = '';
-    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" data-tip="${o.fondo||''}">${o.fondo||'—'}</td>`;
+    if (tab==='fci')   extraCols = `<td style="font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis" data-tip="${o.fondo||''}">${o.fondo||'—'}</td><td><span class="tipo-badge">${o.monedaFci||'—'}</span></td>`;
     if (tab==='pagos') extraCols = `<td style="font-size:12px" data-tip="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" data-tip="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" data-tip="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" data-tip="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" data-tip="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" data-tip="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" data-tip="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
@@ -2204,20 +2204,32 @@ function submitOrder() {
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Selecciona Con Mesa o Directo'); return; }
   if (tab==='conv'  && !newOrder.monedaConv) { showToast('⚠ Seleccioná la moneda de conversión'); return; }
 
-  // Save to Firebase (single source of truth)
-  if (window.__db) {
-    window.__db.ref('ordenes').push(newOrder)
-      .then(function() { showToast('✓ Orden ' + id + ' enviada'); })
-      .catch(function(e) {
-        // Fallback local
-        orders.unshift(newOrder);
-        renderTable();
-        showToast('✓ Orden ' + id + ' guardada localmente');
-      });
+  // Save to Firebase - editar o crear
+  if (window._editingFbKey) {
+    // EDITAR orden existente
+    const fbKey = window._editingFbKey;
+    newOrder.id = window._editingId || id;
+    newOrder.estado = orders.find(x=>x.fbKey===fbKey)?.estado || 'PENDIENTE';
+    if (window.__db) {
+      window.__db.ref('ordenes/' + fbKey).update(newOrder)
+        .then(function() { showToast('✓ Orden ' + newOrder.id + ' actualizada'); })
+        .catch(function(e) { showToast('⚠ Error al guardar'); });
+    }
   } else {
-    orders.unshift(newOrder);
-    renderTable();
-    showToast('✓ Orden ' + id + ' enviada');
+    // NUEVA orden
+    if (window.__db) {
+      window.__db.ref('ordenes').push(newOrder)
+        .then(function() { showToast('✓ Orden ' + id + ' enviada'); })
+        .catch(function(e) {
+          orders.unshift(newOrder);
+          renderTable();
+          showToast('✓ Orden ' + id + ' guardada localmente');
+        });
+    } else {
+      orders.unshift(newOrder);
+      renderTable();
+      showToast('✓ Orden ' + id + ' enviada');
+    }
   }
   closeModal();
 }
