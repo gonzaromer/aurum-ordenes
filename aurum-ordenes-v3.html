@@ -430,6 +430,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
   .form-row.thirds{grid-template-columns:1fr;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -2394,19 +2395,36 @@ function removeFondo(idx) {
 }
 function importFondosExcel(event) {
   const file = event.target.files[0];
-  if(!file) return;
+  if (!file) return;
+  showToast('Procesando Excel...');
   const reader = new FileReader();
   reader.onload = function(e) {
-    const lines = e.target.result.split('\n').filter(l=>l.trim());
-    let added=0;
-    lines.forEach(function(line) {
-      const name = line.trim().replace(/[";]/g,'');
-      if(name && !fondos.includes(name)) { fondos.push(name); added++; }
-    });
-    renderFondosAdmin();
-    showToast('✓ Importados: '+added+' fondos nuevos');
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      let added = 0;
+      rows.forEach(function(row) {
+        const name = (row[0]||'').toString().trim();
+        if (!name) return;
+        if (name.startsWith('Advertencia') || name.startsWith('P/E')) return;
+        if (!fondos.includes(name)) { fondos.push(name); added++; }
+      });
+      // Guardar en Firebase
+      if (window.__db) {
+        window.__db.ref('fondos').set(fondos).then(function(){
+          renderFondosAdmin();
+          showToast('✓ Importados: '+added+' fondos nuevos');
+        });
+      } else {
+        renderFondosAdmin();
+        showToast('✓ Importados: '+added+' fondos nuevos');
+      }
+    } catch(err) {
+      showToast('⚠ Error al leer el Excel: '+err.message);
+    }
   };
-  reader.readAsText(file,'UTF-8');
+  reader.readAsBinaryString(file);
   event.target.value='';
 }
 
