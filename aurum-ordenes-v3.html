@@ -905,31 +905,42 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div id="senebi-form-directo" style="display:none">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Ticker *</label>
-              <input class="form-input" id="f-ticker" placeholder="Ej: AL30, GD30, LA104">
+              <label class="form-label">Ticker Base *</label>
+              <input class="form-input" id="f-ticker-base" placeholder="Ej: AL30, GD30" oninput="onTickerBaseChange()">
             </div>
             <div class="form-group">
               <label class="form-label">Nominales *</label>
               <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
             </div>
           </div>
+          <!-- Tickers derivados (readonly, se generan solos) -->
+          <div class="form-row" id="row-tickers-derivados" style="display:none">
+            <div class="form-group">
+              <label class="form-label" id="lbl-ticker-ars">Ticker ARS</label>
+              <input class="form-input" id="f-ticker-ars" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="lbl-ticker-usd">Ticker USD</label>
+              <input class="form-input" id="f-ticker-usd" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Precio Bono ARS *</label>
+              <label class="form-label" id="lbl-precio-ars">Precio ARS *</label>
               <input class="form-input importe-field" id="f-precio-ars" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
             </div>
             <div class="form-group">
-              <label class="form-label">Precio Bono USD *</label>
+              <label class="form-label" id="lbl-precio-usd">Precio USD *</label>
               <input class="form-input importe-field" id="f-precio-usd" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Monto ARS <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.ARS)</span></label>
+              <label class="form-label" id="lbl-monto-ars-dir">Monto ARS <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.ARS)</span></label>
               <input class="form-input" id="f-monto-ars-dir" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
             </div>
             <div class="form-group">
-              <label class="form-label">Monto USD <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.USD)</span></label>
+              <label class="form-label" id="lbl-monto-usd-dir">Monto USD <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.USD)</span></label>
               <input class="form-input" id="f-monto-usd-dir" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
             </div>
           </div>
@@ -1495,6 +1506,43 @@ function calcResultadoSenebi() {
   }
 }
 
+// Sufijos por operacion para tickers
+const senebiSufijos = {
+  'compra-mep':      {ars:'',    usd:'D'},
+  'compra-cable':    {ars:'',    usd:'C'},
+  'venta-mep':       {ars:'',    usd:'D'},
+  'venta-cable':     {ars:'',    usd:'C'},
+  'canje-mep-cable': {ars:'D',   usd:'C'},
+  'canje-cable-mep': {ars:'C',   usd:'D'},
+};
+
+function onTickerBaseChange() {
+  const base = (document.getElementById('f-ticker-base')?.value||'').trim().toUpperCase();
+  const op   = document.getElementById('f-senebi-operacion')?.value||'';
+  const suf  = senebiSufijos[op] || {ars:'', usd:'D'};
+  const tickerArs = base + suf.ars;
+  const tickerUsd = base + suf.usd;
+  const elArs = document.getElementById('f-ticker-ars');
+  const elUsd = document.getElementById('f-ticker-usd');
+  const rowDer = document.getElementById('row-tickers-derivados');
+  const lblPA  = document.getElementById('lbl-precio-ars');
+  const lblPU  = document.getElementById('lbl-precio-usd');
+  const lblMA  = document.getElementById('lbl-monto-ars-dir');
+  const lblMU  = document.getElementById('lbl-monto-usd-dir');
+  if (base) {
+    if (elArs) elArs.value = tickerArs;
+    if (elUsd) elUsd.value = tickerUsd;
+    if (rowDer) rowDer.style.display = '';
+    if (lblPA) lblPA.innerHTML = 'Precio <strong>'+tickerArs+'</strong> (ARS) *';
+    if (lblPU) lblPU.innerHTML = 'Precio <strong>'+tickerUsd+'</strong> (USD) *';
+    if (lblMA) lblMA.innerHTML = 'Monto ARS <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.'+tickerArs+')</span>';
+    if (lblMU) lblMU.innerHTML = 'Monto USD <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.'+tickerUsd+')</span>';
+  } else {
+    if (rowDer) rowDer.style.display = 'none';
+  }
+  calcSenebiDirecto();
+}
+
 // TC implicito directo
 function calcSenebiDirecto() {
   const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
@@ -1668,7 +1716,7 @@ function renderTable() {
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
-  if (tab==='senebi') cols.push('Comitente','Operacion','Metodo','Plazo','TC / Resultado','Monto');
+  if (tab==='senebi') cols.push('Comitente','Operacion','Metodo','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','TC / TC Imp.','Monto ARS','Monto USD','Resultado');
   if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
   cols.push('Prioridad','Estado');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
@@ -1700,15 +1748,31 @@ function renderTable() {
       const opLabel  = opLabels[o.senebiOperacion] || o.senebiOperacion || '—';
       const metodo   = o.senebiTipo==='mesa' ? 'Con Mesa' : o.senebiTipo==='directo' ? 'Directo' : '—';
       const plazo    = o.plazo||'—';
-      const tcRes    = o.senebiTipo==='mesa' ? (o.tcCliente ? 'TC '+o.tcCliente : '—') : (o.tcImplicito ? 'TC '+o.tcImplicito : '—');
-      const resultado= o.senebiTipo==='mesa' ? (o.resultado ? '$'+o.resultado : '—') : (o.montoArs ? '$'+o.montoArs : '—');
       const comitente= o.comitenteCompra ? `${o.comitenteCompra}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,14)}</small>` : '—';
+      // Con Mesa
+      const tcShow   = o.senebiTipo==='mesa' ? (o.tcCliente||'—') : (o.tcImplicito||'—');
+      const montoArs = o.senebiTipo==='mesa' ? (o.arsCliente||'—') : (o.montoArs||'—');
+      const montoUsd = o.senebiTipo==='mesa' ? (o.montoSenebi||'—') : (o.montoUsd||'—');
+      const resultado= o.senebiTipo==='mesa' ? (o.resultado||'—') : '—';
+      // Directo
+      const tickerArs = o.tickerArs||'—';
+      const tickerUsd = o.tickerUsd||'—';
+      const nominales = o.nominales||'—';
+      const pArs      = o.precioArs||'—';
+      const pUsd      = o.precioUsd||'—';
       extraCols = `<td class="senebi-cte" data-tip="${o.comitenteCompra||''} - ${o.nombreCompra||''}">${comitente}</td>`
         + `<td style="font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap">${opLabel}</td>`
         + `<td><span class="tipo-badge" style="font-size:10px">${metodo}</span></td>`
         + `<td>${plazo}</td>`
-        + `<td class="id-mono" style="font-size:11px;color:var(--teal-dark);font-weight:700">${tcRes}</td>`
-        + `<td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${resultado}</td>`;
+        + `<td class="id-mono" style="font-size:11px">${tickerArs}</td>`
+        + `<td class="id-mono" style="font-size:11px">${tickerUsd}</td>`
+        + `<td class="id-mono">${nominales}</td>`
+        + `<td class="id-mono" style="font-size:11px">${pArs}</td>`
+        + `<td class="id-mono" style="font-size:11px">${pUsd}</td>`
+        + `<td class="id-mono" style="color:var(--teal-dark);font-weight:700">${tcShow}</td>`
+        + `<td class="id-mono" style="font-weight:700">${montoArs}</td>`
+        + `<td class="id-mono" style="font-weight:700">${montoUsd}</td>`
+        + `<td class="id-mono" style="color:var(--teal-dark);font-weight:800">${resultado}</td>`;
     }
 
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
@@ -1906,7 +1970,7 @@ function openModal() {
   var fd=document.getElementById('senebi-form-directo'); if(fd) fd.style.display='none';
   var rmt=document.getElementById('senebi-row-monto'); if(rmt) rmt.style.display='none';
   var stw=document.getElementById('senebi-tipo-wrap'); if(stw) stw.style.display='none';
-  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
   const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
   document.getElementById('modal-title').textContent = titles[currentView] || 'Nueva Orden';
@@ -2118,9 +2182,13 @@ function submitOrder() {
     // Con Mesa
     tcMesa:       tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-tc-mesa')?.value||'') : '',
     tcCliente:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-tc-cliente')?.value||'') : '',
+    arsMesa:      tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-ars-mesa')?.value||'') : '',
+    arsCliente:   tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-ars-cliente')?.value||'') : '',
     resultado:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : '',
     // Directo
-    ticker:       tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker')?.value||'') : '',
+    ticker:        tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker-base')?.value||'') : '',
+    tickerArs:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker-ars')?.value||'') : '',
+    tickerUsd:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker-usd')?.value||'') : '',
     nominales:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-nominales')?.value||'') : '',
     precioArs:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ars')?.value||'') : '',
     precioUsd:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-usd')?.value||'') : '',
