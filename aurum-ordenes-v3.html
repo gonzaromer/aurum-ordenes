@@ -2555,6 +2555,28 @@ window.__db = firebase.database();
 // Init passwords from Firebase
 initPasswords();
 
+// Realtime fondos listener
+window.__db.ref('fondos').on('value', function(snapshot) {
+  var data = snapshot.val();
+  if (data && Array.isArray(data)) {
+    fondos = data.filter(function(f){ return f && f.trim(); });
+  } else if (data && typeof data === 'object') {
+    fondos = Object.values(data).filter(function(f){ return f && f.trim(); });
+  }
+  if (typeof renderFondosAdmin==='function' && currentUser && currentUser.isAdmin) renderFondosAdmin();
+});
+
+// Realtime clientes listener
+window.__db.ref('clientes').on('value', function(snapshot) {
+  var data = snapshot.val();
+  if (data && Array.isArray(data)) {
+    clients = data.filter(function(c){ return c && c.comitente; });
+  } else if (data && typeof data === 'object') {
+    clients = Object.values(data).filter(function(c){ return c && c.comitente; });
+  }
+  if (typeof renderClients==='function' && currentUser && currentUser.isAdmin) renderClients();
+});
+
 // Realtime orders listener
 window.__db.ref('ordenes').on('value', function(snapshot) {
   var data = snapshot.val();
