@@ -701,16 +701,24 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Importe</label>
-            <input class="form-input importe-field" id="f-importe-fci" placeholder="0,00" oninput="fmtImporte(this)">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" id="f-moneda-fci">
+              <option value="">--</option><option>ARS</option><option>MEP</option><option>CABLE</option>
+            </select>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
+            <label class="form-label">Importe</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input class="form-input importe-field" id="f-importe-fci" placeholder="0,00" oninput="fmtImporteConv(this)" style="flex:1">
+              <button type="button" id="btn-liq-fci" onclick="toggleLiquidez('f-importe-fci','btn-liq-fci')" style="white-space:nowrap;padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s">Liquidez</button>
+            </div>
+          </div>
+          <div class="form-group">
             <label class="form-label">Fecha</label>
             <input class="form-input" id="f-fecha-fci" type="date">
           </div>
-          <div class="form-group"></div>
         </div>
       </div>
       <!-- PAGO fields -->
@@ -737,7 +745,10 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Importe</label>
-            <input class="form-input importe-field" id="f-importe-pago" placeholder="0,00" oninput="fmtImporte(this)">
+            <div style="display:flex;gap:6px;align-items:center">
+              <input class="form-input importe-field" id="f-importe-pago" placeholder="0,00" oninput="fmtImporteConv(this)" style="flex:1">
+              <button type="button" id="btn-liq-pago" onclick="toggleLiquidez('f-importe-pago','btn-liq-pago')" style="white-space:nowrap;padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s">Liquidez</button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Fecha</label>
@@ -798,12 +809,31 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
       </div>
       <!-- SENEBI fields -->
       <div id="senebi-fields" style="display:none">
+
+        <!-- Selector tipo operacion -->
+        <div class="form-row full" style="margin-bottom:2px">
+          <div class="form-group">
+            <label class="form-label">Tipo de Operacion *</label>
+            <div style="display:flex;gap:8px">
+              <button type="button" id="senebi-btn-mesa" onclick="setSenebiTipo('mesa')"
+                style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">
+                Con Cotizacion Mesa
+              </button>
+              <button type="button" id="senebi-btn-directo" onclick="setSenebiTipo('directo')"
+                style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">
+                Directo (Sin Mesa)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comitentes (siempre visibles) -->
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Comitente Compra *</label>
             <div class="client-search-wrap" id="senebi-compra-wrap">
               <div id="senebi-compra-display" style="display:none" class="client-selected-tag" onclick="clearSenebiCompra()">
-                <span id="senebi-compra-text">—</span><span class="client-clear">✕</span>
+                <span id="senebi-compra-text">--</span><span class="client-clear">x</span>
               </div>
               <input type="text" class="client-search-input" id="senebi-compra-input"
                 placeholder="Buscar comitente compra..." oninput="filterSenebiCompra()" onfocus="openSenebiCompraDd()" autocomplete="off">
@@ -814,7 +844,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <label class="form-label">Comitente Venta *</label>
             <div class="client-search-wrap" id="senebi-venta-wrap">
               <div id="senebi-venta-display" style="display:none" class="client-selected-tag" onclick="clearSenebiVenta()">
-                <span id="senebi-venta-text">—</span><span class="client-clear">✕</span>
+                <span id="senebi-venta-text">--</span><span class="client-clear">x</span>
               </div>
               <input type="text" class="client-search-input" id="senebi-venta-input"
                 placeholder="Buscar comitente venta..." oninput="filterSenebiVenta()" onfocus="openSenebiVentaDd()" autocomplete="off">
@@ -822,48 +852,118 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
         </div>
-        <div class="form-row thirds">
-          <div class="form-group">
-            <label class="form-label">Ticker *</label>
-            <input class="form-input" id="f-ticker" placeholder="Ej: GD30">
+
+        <!-- FORMULARIO CON MESA -->
+        <div id="senebi-form-mesa" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Mesa *</label>
+              <select class="form-select" id="f-mesa-operacion">
+                <option value="">--</option>
+                <option>Mesa Vende</option>
+                <option>Mesa Compra</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Moneda *</label>
+              <select class="form-select" id="f-moneda-senebi-mesa" onchange="calcCI()">
+                <option value="">--</option>
+                <option>MEP</option><option>CABLE</option><option>ARS</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Plazo *</label>
-            <select class="form-select" id="f-plazo">
-              <option value="">—</option>
-              <option>CI</option>
-              <option>24HS</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Monto USD *</label>
+              <input class="form-input importe-field" id="f-monto-usd-mesa" placeholder="0,00" oninput="fmtImporte(this);calcCI()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Plazo *</label>
+              <select class="form-select" id="f-plazo-mesa">
+                <option value="">--</option><option>CI</option><option>24HS</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Moneda *</label>
-            <select class="form-select" id="f-moneda-senebi">
-              <option value="">—</option>
-              <option>ARS</option><option>MEP</option><option>CABLE</option>
-              <option>DE CCL A MEP</option><option>DE MEP A CCL</option>
-            </select>
+          <div class="form-row thirds">
+            <div class="form-group">
+              <label class="form-label">Precio Mesa *</label>
+              <input class="form-input importe-field" id="f-precio-mesa" placeholder="0,00" oninput="fmtImporte(this);calcCI()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Precio Cliente *</label>
+              <input class="form-input importe-field" id="f-precio-cliente" placeholder="0,00" oninput="fmtImporte(this);calcCI()">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800">CI / Ganancia</label>
+              <input class="form-input" id="f-ci-mesa" placeholder="0,00" readonly
+                style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
+            </div>
           </div>
         </div>
-        <div class="form-row thirds">
-          <div class="form-group">
-            <label class="form-label">Precio Mesa</label>
-            <input class="form-input importe-field" id="f-precio-mesa" placeholder="0,00" oninput="fmtImporte(this)">
+
+        <!-- FORMULARIO DIRECTO SIN MESA -->
+        <div id="senebi-form-directo" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ticker *</label>
+              <input class="form-input" id="f-ticker" placeholder="Ej: AL30, GD30, LA104">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Plazo *</label>
+              <select class="form-select" id="f-plazo">
+                <option value="">--</option><option>CI</option><option>24HS</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Precio Cliente</label>
-            <input class="form-input importe-field" id="f-precio-cliente" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nominales *</label>
+              <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Moneda TC *</label>
+              <select class="form-select" id="f-moneda-senebi" onchange="calcSenebiDirecto()">
+                <option value="">--</option>
+                <option>MEP</option><option>CABLE</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Nominales</label>
-            <input class="form-input importe-field" id="f-nominales" placeholder="0,00" oninput="fmtImporte(this);calcMonto()">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio Bono en ARS *</label>
+              <input class="form-input importe-field" id="f-precio-ars" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Precio Bono en USD *</label>
+              <input class="form-input importe-field" id="f-precio-usd" placeholder="0,00" oninput="fmtImporte(this);calcSenebiDirecto()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Monto ARS <span style="font-size:9px;color:var(--text-muted)">(Nominales x P. ARS)</span></label>
+              <input class="form-input" id="f-monto-ars-dir" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto USD <span style="font-size:9px;color:var(--text-muted)">(Nominales x P. USD)</span></label>
+              <input class="form-input" id="f-monto-usd-dir" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800">Tipo de Cambio Implicito <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(P. ARS / P. USD)</span></label>
+              <input class="form-input" id="f-tc-implicito" placeholder="0,00" readonly
+                style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
+            </div>
           </div>
         </div>
-        <div class="form-row full">
-          <div class="form-group">
-            <label class="form-label">Monto <span style="font-size:9px;color:var(--teal-dark)">(Nominales × Precio Cliente)</span></label>
-            <input class="form-input importe-field" id="f-monto-senebi" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--teal-dark);font-weight:700;cursor:default">
-          </div>
-        </div>
+
+        <!-- campos ocultos para compatibilidad con submitOrder -->
+        <input type="hidden" id="f-nominales-hidden" value="">
+        <input type="hidden" id="f-monto-senebi" value="">
+        <input type="hidden" id="f-plazo-hidden" value="">
+        <input type="hidden" id="f-moneda-senebi-hidden" value="">
+        <input type="hidden" id="f-precio-mesa-hidden" value="">
+        <input type="hidden" id="f-precio-cliente-hidden" value="">
       </div>
       <!-- Comments -->
       <div class="form-row full">
@@ -1229,7 +1329,7 @@ function setModalFields(view) {
     tipo.innerHTML = '<option value="">—</option><option>SUSCRIPCION</option><option>RESCATE</option>';
     showFields('fci');
   } else if (view === 'pagos-hoy') {
-    tipo.innerHTML = '<option value="">—</option><option>PAGO</option><option>PAGO RESCATE</option><option>ECHEQ</option><option>CHEQUE FISICO</option>';
+    tipo.innerHTML = '<option value="">—</option><option>PAGO</option>';
     showFields('pago');
   } else if (view === 'conv-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>CONVERSION</option>';
@@ -1244,25 +1344,7 @@ function setModalFields(view) {
 }
 function onTipoChange() {
   const t = document.getElementById('f-tipo').value;
-  if (t === 'PAGO' || t === 'PAGO RESCATE' || t === 'ECHEQ' || t === 'CHEQUE FISICO') {
-    showFields('pago');
-    const bancoWrap = document.getElementById('banco-wrap');
-    const bancoInput = document.getElementById('banco-search-input');
-    const isCheque = (t === 'ECHEQ' || t === 'CHEQUE FISICO');
-    if (bancoWrap) {
-      bancoWrap.style.opacity = isCheque ? '0.4' : '1';
-      bancoWrap.style.pointerEvents = isCheque ? 'none' : '';
-      bancoWrap.style.userSelect = isCheque ? 'none' : '';
-    }
-    if (isCheque) {
-      // Limpiar selección de banco si había algo elegido
-      selectedBanco = null;
-      const bsd = document.getElementById('banco-sel-display');
-      const bsi = document.getElementById('banco-search-input');
-      if (bsd) bsd.style.display = 'none';
-      if (bsi) { bsi.style.display = 'block'; bsi.value = ''; }
-    }
-  }
+  if (t === 'PAGO') { showFields('pago'); }
   else if (t === 'CONVERSION') showFields('conv');
   else if (t === 'LICITACION') showFields('lic');
   else if (t === 'SENEBI') showFields('senebi');
@@ -1315,18 +1397,79 @@ function savePasswordToFirebase(uid, hashedPw, isFirst) {
 let selectedSenebiCompra = null;
 let selectedSenebiVenta = null;
 
-function calcMonto() {
-  const precioStr = (document.getElementById('f-precio-cliente').value||'').replace(/\./g,'').replace(',','.');
-  const nominalesStr = (document.getElementById('f-nominales').value||'').replace(/\./g,'').replace(',','.');
-  const precio = parseFloat(precioStr)||0;
-  const nominales = parseFloat(nominalesStr)||0;
-  const monto = precio * nominales;
-  if (monto > 0) {
-    const formatted = monto.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    document.getElementById('f-monto-senebi').value = formatted;
+// ─── LIQUIDEZ TOGGLE ───────────────────────────────
+function toggleLiquidez(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (!input) return;
+  if (input.value === 'Liquidez') {
+    input.value = '';
+    input.readOnly = false;
+    input.style.background = '';
+    input.style.color = '';
+    if (btn) { btn.style.background='var(--surface2)'; btn.style.color='var(--text-muted)'; btn.style.borderColor='var(--border)'; }
   } else {
-    document.getElementById('f-monto-senebi').value = '';
+    input.value = 'Liquidez';
+    input.readOnly = true;
+    input.style.background = '#F4F6FB';
+    input.style.color = 'var(--teal-dark)';
+    if (btn) { btn.style.background='var(--teal)'; btn.style.color='#fff'; btn.style.borderColor='var(--teal)'; }
   }
+}
+
+// ─── SENEBI TIPO ────────────────────────────────────
+let currentSenebiTipo = null;
+function setSenebiTipo(tipo) {
+  currentSenebiTipo = tipo;
+  const btnMesa    = document.getElementById('senebi-btn-mesa');
+  const btnDirecto = document.getElementById('senebi-btn-directo');
+  const formMesa    = document.getElementById('senebi-form-mesa');
+  const formDirecto = document.getElementById('senebi-form-directo');
+  const activeStyle   = 'background:var(--teal);color:#fff;border-color:var(--teal)';
+  const inactiveStyle = 'background:var(--surface2);color:var(--text-muted);border-color:var(--border)';
+  if (tipo === 'mesa') {
+    btnMesa.style.cssText    += ';background:var(--teal);color:#fff;border-color:var(--teal)';
+    btnDirecto.style.cssText += ';background:var(--surface2);color:var(--text-muted);border-color:var(--border)';
+    formMesa.style.display    = 'block';
+    formDirecto.style.display = 'none';
+  } else {
+    btnDirecto.style.cssText += ';background:var(--teal);color:#fff;border-color:var(--teal)';
+    btnMesa.style.cssText    += ';background:var(--surface2);color:var(--text-muted);border-color:var(--border)';
+    formDirecto.style.display = 'block';
+    formMesa.style.display    = 'none';
+  }
+}
+
+// ─── CALCULO CI (Con Mesa) ──────────────────────────
+function calcCI() {
+  const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
+  const montoUSD   = parse('f-monto-usd-mesa');
+  const precioMesa = parse('f-precio-mesa');
+  const precioCli  = parse('f-precio-cliente');
+  if (montoUSD > 0 && precioMesa > 0 && precioCli > 0) {
+    const montoPesosMesa = montoUSD * precioMesa;
+    const montoPesosCli  = montoUSD * precioCli;
+    const ci = Math.abs(montoPesosCli - montoPesosMesa);
+    document.getElementById('f-ci-mesa').value = ci.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  } else {
+    document.getElementById('f-ci-mesa').value = '';
+  }
+}
+
+// ─── CALCULO SENEBI DIRECTO ─────────────────────────
+function calcSenebiDirecto() {
+  const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
+  const nominales = parse('f-nominales');
+  const precioARS = parse('f-precio-ars');
+  const precioUSD = parse('f-precio-usd');
+  const fmt = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  document.getElementById('f-monto-ars-dir').value = fmt(nominales * precioARS);
+  document.getElementById('f-monto-usd-dir').value = fmt(nominales * precioUSD);
+  document.getElementById('f-tc-implicito').value  = (precioARS > 0 && precioUSD > 0) ? fmt(precioARS / precioUSD) : '';
+}
+
+function calcMonto() {
+  // legacy - ya no se usa activamente pero se mantiene por compatibilidad
 }
 
 function makeSenebiSearch(id, ddId, displayId, textId, setterFn) {
@@ -1484,7 +1627,7 @@ function renderTable() {
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
-  if (tab==='senebi') cols.push('Cte. Compra','Cte. Venta','Ticker','Plazo','Moneda','P. Mesa','P. Cliente','Nominales','Monto');
+  if (tab==='senebi') cols.push('Cte. Compra','Cte. Venta','Tipo Op.','Detalle','TC / CI','Monto');
   if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
   cols.push('Prioridad','Estado');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
@@ -1511,7 +1654,18 @@ function renderTable() {
     if (tab==='pagos') extraCols = `<td style="font-size:12px" data-tip="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" data-tip="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" data-tip="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" data-tip="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" data-tip="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" data-tip="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" data-tip="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
-    if (tab==='senebi') extraCols = `<td class="senebi-cte" data-tip="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td><td class="senebi-cte" data-tip="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td><td class="id-mono" style="font-weight:700" data-tip="${o.ticker||''}">${o.ticker||'—'}</td><td data-tip="${o.plazo||''}">${o.plazo||'—'}</td><td data-tip="${o.monedaSenebi||''}">${o.monedaSenebi||'—'}</td><td class="id-mono" data-tip="${o.precioMesa||''}">${o.precioMesa||'—'}</td><td class="id-mono" data-tip="${o.precioCliente||''}">${o.precioCliente||'—'}</td><td class="id-mono" data-tip="${o.nominales||''}">${o.nominales||'—'}</td><td class="id-mono" style="font-weight:700;color:var(--teal-dark)" data-tip="${o.monto||''}">${o.monto||'—'}</td>`;
+    if (tab==='senebi') {
+      const tipoOp = o.senebiTipo==='mesa' ? 'Con Mesa' : o.senebiTipo==='directo' ? 'Directo' : '—';
+      const detalle = o.senebiTipo==='mesa' ? `${o.mesaOperacion||'—'} ${o.monedaSenebi||''}` : `${o.ticker||'—'} ${o.plazo||''} ${o.monedaSenebi||''}`;
+      const tcCi = o.senebiTipo==='mesa' ? (o.ciGanancia ? `CI: $${o.ciGanancia}` : '—') : (o.tcImplicito ? `TC: ${o.tcImplicito}` : '—');
+      const montoShow = o.senebiTipo==='mesa' ? (o.montoUsdMesa ? `USD ${o.montoUsdMesa}` : '—') : (o.montoArs ? `$${o.montoArs}` : '—');
+      extraCols = `<td class="senebi-cte" data-tip="${o.comitenteCompra||''} · ${o.nombreCompra||''}">${o.comitenteCompra||'—'}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,12)}</small></td>`
+        + `<td class="senebi-cte" data-tip="${o.comitenteVenta||''} · ${o.nombreVenta||''}">${o.comitenteVenta||'—'}<br><small style="color:var(--text-muted)">${(o.nombreVenta||'').slice(0,12)}</small></td>`
+        + `<td><span class="tipo-badge" style="font-size:10px">${tipoOp}</span></td>`
+        + `<td style="font-size:12px" data-tip="${detalle}">${detalle}</td>`
+        + `<td class="id-mono" style="font-size:12px;color:var(--teal-dark);font-weight:700">${tcCi}</td>`
+        + `<td class="id-mono" style="font-weight:700;color:var(--teal-dark)">${montoShow}</td>`;
+    }
 
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
     let statusCell = canChange
@@ -1682,6 +1836,10 @@ function openModal() {
   const bsi=document.getElementById('banco-search-input'); if(bsi){bsi.style.display='block';bsi.value='';}
   const bdd=document.getElementById('banco-dd'); if(bdd){bdd.innerHTML='';bdd.classList.remove('open');}
   const bw=document.getElementById('banco-wrap'); if(bw){bw.style.opacity='';bw.style.pointerEvents='';bw.style.userSelect='';}
+  // Reset liquidez buttons
+  ['btn-liq-fci','btn-liq-pago'].forEach(function(id){var el=document.getElementById(id);if(el){el.style.background='var(--surface2)';el.style.color='var(--text-muted)';el.style.borderColor='var(--border)';}});
+  // Reset moneda FCI
+  var mfci=document.getElementById('f-moneda-fci');if(mfci)mfci.value='';
   // Reset fondo
   const fsd=document.getElementById('fondo-sel-display'); if(fsd) fsd.style.display='none';
   const fsi=document.getElementById('fondo-search-input'); if(fsi){fsi.style.display='block';fsi.value='';}
@@ -1694,10 +1852,13 @@ function openModal() {
   ['f-denominacion','f-precio-tasa','f-cantidad'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';});
   const ml=document.getElementById('f-moneda-lic');if(ml)ml.value='';
   // Reset SENEBI
-  selectedSenebiCompra=null; selectedSenebiVenta=null;
+  selectedSenebiCompra=null; selectedSenebiVenta=null; currentSenebiTipo=null;
   ['senebi-compra-display','senebi-venta-display'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
   ['senebi-compra-input','senebi-venta-input'].forEach(function(id){const el=document.getElementById(id);if(el){el.style.display='block';el.value='';}});
-  ['f-ticker','f-precio-mesa','f-precio-cliente','f-nominales','f-monto-senebi'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  ['senebi-btn-mesa','senebi-btn-directo'].forEach(function(id){var el=document.getElementById(id);if(el){el.style.background='var(--surface2)';el.style.color='var(--text-muted)';el.style.borderColor='var(--border)';}});
+  var fm=document.getElementById('senebi-form-mesa'); if(fm) fm.style.display='none';
+  var fd=document.getElementById('senebi-form-directo'); if(fd) fd.style.display='none';
+  ['f-ticker','f-precio-mesa','f-precio-cliente','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito','f-ci-mesa','f-monto-usd-mesa'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';}); 
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
   const ms=document.getElementById('f-moneda-senebi');if(ms)ms.value='';
   const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
@@ -1888,6 +2049,7 @@ function submitOrder() {
            : tab==='conv'  ? document.getElementById('f-importe-conv').value
            : '',
     fondo:      selectedFondo||'',
+    monedaFci:  document.getElementById('f-moneda-fci')?.value||'',
     banco:      selectedBanco||'',
     moneda:     document.getElementById('f-moneda-pago')?.value||'',
     monedaConv: document.getElementById('f-moneda-conv')?.value||'',
@@ -1898,20 +2060,35 @@ function submitOrder() {
     cantidad:     tab==='lic' ? (document.getElementById('f-cantidad')?.value||'')     : '',
     monedaLic:    tab==='lic' ? (document.getElementById('f-moneda-lic')?.value||'')   : '',
     // SENEBI
+    senebiTipo:      tab==='senebi' ? (currentSenebiTipo||'') : '',
     comitenteCompra: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : '',
     nombreCompra:    tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : '',
     comitenteVenta:  tab==='senebi' ? (selectedSenebiVenta?.comitente||'')  : '',
     nombreVenta:     tab==='senebi' ? (selectedSenebiVenta?.nombre||'')     : '',
-    ticker:       tab==='senebi' ? (document.getElementById('f-ticker')?.value||'')        : '',
-    plazo:        tab==='senebi' ? (document.getElementById('f-plazo')?.value||'')         : '',
-    monedaSenebi: tab==='senebi' ? (document.getElementById('f-moneda-senebi')?.value||'') : '',
-    precioMesa:   tab==='senebi' ? (document.getElementById('f-precio-mesa')?.value||'')   : '',
-    precioCliente:tab==='senebi' ? (document.getElementById('f-precio-cliente')?.value||''):  '',
-    nominales:    tab==='senebi' ? (document.getElementById('f-nominales')?.value||'')     : '',
-    monto:        tab==='senebi' ? (document.getElementById('f-monto-senebi')?.value||'')  : '',
+    // Con Mesa
+    mesaOperacion: tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-mesa-operacion')?.value||'') : '',
+    monedaSenebi:  tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-moneda-senebi-mesa')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-moneda-senebi')?.value||'') : ''),
+    plazo:         tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-plazo-mesa')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-plazo')?.value||'') : ''),
+    montoUsdMesa:  tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-monto-usd-mesa')?.value||'') : '',
+    precioMesa:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-precio-mesa')?.value||'') : '',
+    precioCliente: tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-precio-cliente')?.value||'') : '',
+    ciGanancia:    tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-ci-mesa')?.value||'') : '',
+    // Directo
+    ticker:        tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-ticker')?.value||'') : '',
+    nominales:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-nominales')?.value||'') : '',
+    precioArs:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ars')?.value||'') : '',
+    precioUsd:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-usd')?.value||'') : '',
+    montoArs:      tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ars-dir')?.value||'') : '',
+    montoUsd:      tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-usd-dir')?.value||'') : '',
+    tcImplicito:   tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-tc-implicito')?.value||'') : '',
+    monto:         tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ars-dir')?.value||'') : '',
   };
 
+  if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
+  if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
+  if (tab==='senebi' && !selectedSenebiCompra) { showToast('⚠ Seleccioná comitente compra'); return; }
+  if (tab==='senebi' && !selectedSenebiVenta) { showToast('⚠ Seleccioná comitente venta'); return; }
   if (tab==='conv'  && !newOrder.monedaConv) { showToast('⚠ Seleccioná la moneda de conversión'); return; }
 
   // Save to Firebase (single source of truth)
