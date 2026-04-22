@@ -771,7 +771,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           </div>
           <div class="form-group">
             <label class="form-label">Moneda Conversión *</label>
-            <select class="form-select" id="f-moneda-conv">
+            <select class="form-select" id="f-moneda-conv" onchange="onMonedaConvChange()">
               <option value="">—</option><option>MEP</option><option>CABLE</option>
             </select>
           </div>
@@ -1304,7 +1304,22 @@ function setModalFields(view) {
 }
 function onTipoChange() {
   const t = document.getElementById('f-tipo').value;
-  if (t === 'PAGO') { showFields('pago'); }
+  if (t === 'PAGO' || t === 'PAGO RESCATE' || t === 'ECHEQ' || t === 'CHEQUE FISICO') {
+    showFields('pago');
+    const bancoWrap = document.getElementById('banco-wrap');
+    const isCheque = (t === 'ECHEQ' || t === 'CHEQUE FISICO');
+    if (bancoWrap) {
+      bancoWrap.style.opacity = isCheque ? '0.4' : '1';
+      bancoWrap.style.pointerEvents = isCheque ? 'none' : '';
+    }
+    if (isCheque) {
+      selectedBanco = null;
+      const bsd = document.getElementById('banco-sel-display');
+      const bsi = document.getElementById('banco-search-input');
+      if (bsd) bsd.style.display = 'none';
+      if (bsi) { bsi.style.display = 'block'; bsi.value = ''; }
+    }
+  }
   else if (t === 'CONVERSION') showFields('conv');
   else if (t === 'LICITACION') showFields('lic');
   else if (t === 'SENEBI') showFields('senebi');
@@ -1318,6 +1333,27 @@ function showFields(type) {
   document.getElementById('lic-fields').style.display    = (type==='lic')    ? 'block':'none';
   document.getElementById('senebi-fields').style.display = (type==='senebi') ? 'block':'none';
   document.getElementById('cliente-group').style.display = (type==='senebi') ? 'none':'block';
+}
+
+function addHabilDays(date, days) {
+  // Suma dias habiles (lun-vie) saltando feriados argentinos conocidos
+  var d = new Date(date);
+  var added = 0;
+  while (added < days) {
+    d.setDate(d.getDate() + 1);
+    var dow = d.getDay();
+    if (dow !== 0 && dow !== 6) added++; // saltar sabado y domingo
+  }
+  return d.toISOString().split('T')[0];
+}
+
+function onMonedaConvChange() {
+  const moneda = document.getElementById('f-moneda-conv').value;
+  const fechaLiq = document.getElementById('f-fecha-liq');
+  const fechaBase = document.getElementById('f-fecha-conv').value || TODAY;
+  if (moneda === 'MEP' && fechaLiq) {
+    fechaLiq.value = addHabilDays(fechaBase, 2);
+  }
 }
 
 function setFilter(f, el) {
@@ -1725,7 +1761,7 @@ function renderTable() {
     return;
   }
 
-  body.innerHTML = rows.map(o => {
+  body.innerHTML = rows.map((o, idx) => { o.nro = idx + 1;
     const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const pClass = o.prioridad ? 'p-'+o.prioridad : '';
@@ -1782,7 +1818,7 @@ function renderTable() {
     const comercialCol = showComercialCol ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
 
     return `<tr>
-      <td class="id-mono" data-tip="${o.id}">${o.id}</td>
+      <td class="id-mono" data-tip="${o.id}">${o.nro||o.id}</td>
       <td class="id-mono" data-tip="${o.fecha}">${o.fecha}</td>
       <td><span class="tipo-badge ${tipoClass}" data-tip="${o.tipo}">${o.tipo}</span></td>
       ${tab!=='senebi' ? `<td class="id-mono" data-tip="${o.comitente}">${o.comitente}</td>` : ''}
