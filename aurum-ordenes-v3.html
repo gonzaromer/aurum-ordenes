@@ -1440,11 +1440,11 @@ function calcPPT() {
   const fmtVN = v => v > 0 ? Math.round(v).toLocaleString('es-AR') : '';
   if (currentPptModo === 'vn') {
     vn    = Math.round(parseUser('f-ppt-vn')); // VN siempre entero
-    bruto = precio > 0 ? vn * precio : 0;      // Bruto = VN x Precio (sin /100)
+    bruto = precio > 0 ? vn * precio : 0;      // Bruto = VN x Precio
   } else {
     const monto = parseUser('f-ppt-vn');
-    bruto = monto;
     vn    = precio > 0 ? Math.round(monto / precio) : 0; // VN = Monto / Precio, entero
+    bruto = precio > 0 ? vn * precio : 0;                // Bruto = VN x Precio (no el monto original)
     // Mostrar VN calculado
     const elVn = document.getElementById('f-ppt-vn-calc');
     if (elVn) elVn.value = vn > 0 ? fmtVN(vn) : '';
@@ -1453,14 +1453,32 @@ function calcPPT() {
   // Arancel en la moneda del bruto
   const arancelMonto = bruto * arancelTasa;
 
-  // TC para convertir USD a pesos (si es ARS, tc=1)
+  // TC para convertir USD a pesos
+  const tcFalta = esUSD && tc === 0;
+  const elTc = document.getElementById('f-ppt-tc');
+  if (elTc) elTc.style.borderColor = tcFalta ? '#E04B4B' : '';
+
+  // Si es USD y falta TC, limpiar campos que dependen del TC y mostrar advertencia
+  const elDdmm    = document.getElementById('f-ppt-ddmm');
+  const elIvaDdmm = document.getElementById('f-ppt-iva-ddmm');
+  const elIvaAran = document.getElementById('f-ppt-iva-arancel');
+  if (tcFalta) {
+    if (elDdmm)    { elDdmm.value = ''; elDdmm.style.borderColor = '#E04B4B'; elDdmm.placeholder = '⚠ Ingresá TC'; }
+    if (elIvaDdmm) { elIvaDdmm.value = ''; elIvaDdmm.style.borderColor = '#E04B4B'; elIvaDdmm.placeholder = '⚠ Ingresá TC'; }
+    if (elIvaAran) { elIvaAran.value = ''; elIvaAran.style.borderColor = '#E04B4B'; elIvaAran.placeholder = '⚠ Ingresá TC'; }
+  } else {
+    if (elDdmm)    { elDdmm.style.borderColor = ''; elDdmm.placeholder = '0,00'; }
+    if (elIvaDdmm) { elIvaDdmm.style.borderColor = ''; elIvaDdmm.placeholder = '0,00'; }
+    if (elIvaAran) { elIvaAran.style.borderColor = ''; elIvaAran.placeholder = '0,00'; }
+  }
+
   const tcPesos = esUSD && tc > 0 ? tc : 1;
 
   // IVA Arancel en pesos = Arancel * TC * 21%
-  const ivaArancel = arancelMonto * tcPesos * 0.21;
+  const ivaArancel = tcFalta ? 0 : arancelMonto * tcPesos * 0.21;
 
   // DDMM en pesos = Bruto * TC * 0.09688%
-  const ddmm    = bruto * tcPesos * 0.0009688;
+  const ddmm    = tcFalta ? 0 : bruto * tcPesos * 0.0009688;
   const ivaDdmm = ddmm * 0.21;
 
   // Neto USD = Bruto - Arancel (solo si MEP/Cable)
@@ -2374,6 +2392,16 @@ function editOrder(id) {
 }
 
 function renderTable() {
+  const tab = getTabName(currentView);
+
+  // SENEBI: tabla vacía hasta que se elige tipo de operación
+  if (tab === 'senebi' && currentSenebiOpFilter === 'all') {
+    document.getElementById('count-tag').textContent = '0 órdenes';
+    document.getElementById('table-head').innerHTML = '';
+    document.getElementById('table-body').innerHTML = `<tr><td colspan="5" style="padding:0"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-text">Seleccioná un tipo de operación para ver las órdenes</div></div></td></tr>`;
+    return;
+  }
+
   const rows = getTodayOrders();
   document.getElementById('count-tag').textContent = rows.length + ' órden' + (rows.length!==1?'es':'');
 
@@ -2385,7 +2413,6 @@ function renderTable() {
     document.getElementById('st-exec').textContent  = todayAll.filter(o=>o.estado==='EJECUTADO').length;
   }
 
-  const tab = getTabName(currentView);
   const isAdmin = currentUser.isAdmin;
 
   // Columns: ID → Fecha → Tipo → Comitente → Cliente → [extra] → Importe → [Moneda] → Prioridad → Estado → Comercial(admin)
