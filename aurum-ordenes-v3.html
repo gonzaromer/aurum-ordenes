@@ -524,14 +524,6 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
       </div>
       <div class="content">
 
-        <!-- STATS (admin) -->
-        <div class="stats-grid" id="stats-section" style="display:none">
-          <div class="stat-card"><div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="st-pend">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="st-proc">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="st-exec">0</div></div></div>
-        </div>
-
         <!-- STATS SENEBI -->
         <div class="stats-grid" id="senebi-stats-section" style="display:none">
           <div class="stat-card" id="snb-card-all" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('all',this)">
@@ -550,6 +542,13 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 
         <!-- ORDERS VIEW -->
         <div id="orders-view">
+          <!-- STATS (admin/supercomercial) -->
+          <div class="stats-grid" id="stats-section" style="display:none">
+            <div class="stat-card"><div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div></div>
+            <div class="stat-card"><div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="st-pend">0</div></div></div>
+            <div class="stat-card"><div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="st-proc">0</div></div></div>
+            <div class="stat-card"><div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="st-exec">0</div></div></div>
+          </div>
           <!-- Filtro tipo operacion SENEBI -->
           <div class="filter-bar" id="senebi-op-filter" style="display:none;flex-wrap:wrap;gap:5px;margin-bottom:8px">
             <button class="filter-chip" data-snbop="compra-mep" onclick="setSenebiOpFilter('compra-mep',this)">Compra MEP</button>
@@ -1637,12 +1636,11 @@ function launchApp() {
   document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
   if (currentUser.isAdmin) {
     document.getElementById('admin-nav-section').style.display = 'block';
-    document.getElementById('stats-section').style.display = 'grid';
     populateHistComercial();
   } else if (isSuperComercial()) {
-    document.getElementById('stats-section').style.display = 'grid';
     populateHistComercial();
   }
+  // Stats visibles para todos los usuarios
   showView('fci-hoy');
 }
 
@@ -1675,9 +1673,9 @@ function showView(view) {
   const isHist  = view === 'historial';
   document.getElementById('orders-view').style.display   = (!isAdmin && !isHist) ? 'block' : 'none';
   document.getElementById('historial-view').style.display = isHist  ? 'block' : 'none';
-  // Stats generales: solo en vistas de órdenes del día, nunca en historial ni admin
+  // Stats generales: para todos los usuarios, en todos los módulos del día excepto SENEBI
   const statsSection = document.getElementById('stats-section');
-  if (statsSection) statsSection.style.display = (!isAdmin && !isHist && (currentUser.isAdmin || isSuperComercial())) ? 'grid' : 'none';
+  if (statsSection) statsSection.style.display = (!isAdmin && !isHist && view !== 'senebi-hoy') ? 'grid' : 'none';
   document.getElementById('admin-panel').style.display    = isAdmin ? 'block' : 'none';
   document.getElementById('new-order-btn').style.display  = (!isAdmin && !isHist) ? 'inline-block' : 'none';
   document.getElementById('count-tag').style.display      = (!isAdmin && !isHist) ? 'inline-block' : 'none';
@@ -1712,6 +1710,8 @@ function showView(view) {
 
   setModalFields(view);
   renderTable();
+  // Actualizar stats del módulo activo
+  if (!isAdmin && !isHist && view !== 'senebi-hoy') updateModuleStats(view);
 }
 
 function setModalFields(view) {
@@ -1811,6 +1811,16 @@ function setFilter(f, el) {
 // ═══════════════════════════════════════════════════
 //  TABLE
 // ═══════════════════════════════════════════════════
+function updateModuleStats(view) {
+  const tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[view]||'';
+  const t = orders.filter(o => o.tab===tab && o.fecha===TODAY);
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('st-total', t.length);
+  set('st-pend',  t.filter(o=>o.estado==='PENDIENTE').length);
+  set('st-proc',  t.filter(o=>o.estado==='EN PROCESO').length);
+  set('st-exec',  t.filter(o=>o.estado==='EJECUTADO').length);
+}
+
 function getTabName(view) {
   return {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',senebi:'senebi','senebi-hoy':'senebi',ppt:'ppt','ppt-hoy':'ppt'}[view] || view.replace('-hoy','');
 }
@@ -3603,8 +3613,10 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
     if (currentView==='historial') renderHistorial();
     if (currentView==='senebi-hoy' && typeof updateSenebiStats==='function') updateSenebiStats();
     if (currentView==='historial' && typeof updateHistStats==='function') updateHistStats();
-    if (currentUser.isAdmin) {
-      var t=orders.filter(function(o){return o.fecha===TODAY;});
+    // Actualizar stats generales para todos los usuarios
+    if (currentView !== 'historial' && currentView !== 'admin' && currentView !== 'senebi-hoy') {
+      var tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[currentView]||'';
+      var t = orders.filter(function(o){return o.tab===tab && o.fecha===TODAY;});
       var el=document.getElementById('st-total');
       if(el){
         document.getElementById('st-total').textContent=t.length;
