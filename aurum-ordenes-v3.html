@@ -246,6 +246,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 .t-conversion{background:rgba(155,76,226,0.10);color:#7B35C4;}
 .t-licitacion{background:rgba(230,90,30,0.10);color:#C45A10;}
 .t-senebi{background:rgba(30,150,100,0.10);color:#1A7A55;}
+.t-ppt{background:rgba(230,100,50,0.10);color:#B84010;}
 
 .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
@@ -492,6 +493,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="nav-item" onclick="showView('conv-hoy')" id="nav-conv-hoy"><span class="nav-icon">🔄</span>Conversiones</div>
         <div class="nav-item" onclick="showView('lic-hoy')" id="nav-lic-hoy"><span class="nav-icon">🏦</span>Licitaciones</div>
         <div class="nav-item" onclick="showView('senebi-hoy')" id="nav-senebi-hoy"><span class="nav-icon">📈</span>SENEBI</div>
+        <div class="nav-item" onclick="showView('ppt-hoy')" id="nav-ppt-hoy"><span class="nav-icon">🧮</span>PPT</div>
         <div class="nav-section-label">Historial</div>
         <div class="nav-item" onclick="showView('historial')" id="nav-historial"><span class="nav-icon">📋</span>Acumulado</div>
         <div id="admin-nav-section" style="display:none">
@@ -552,7 +554,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <input class="filter-input" type="date" id="hist-to" style="width:140px">
             <select class="filter-select" id="hist-tipo" style="width:130px">
               <option value="">Tipo: Todos</option>
-              <option>FCI</option><option>PAGOS</option><option>CONVERSIONES</option><option>LICITACIONES</option>
+              <option>FCI</option><option>PAGOS</option><option>CONVERSIONES</option><option>LICITACIONES</option><option>SENEBI</option><option>PPT</option>
             </select>
             <select class="filter-select" id="hist-estado" style="width:140px">
               <option value="">Estado: Todos</option>
@@ -575,8 +577,14 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           <div class="admin-grid">
             <!-- Comerciales -->
             <div class="admin-card">
-              <div class="admin-card-header"><div class="admin-card-title">👥 Comerciales</div></div>
+              <div class="admin-card-header" style="display:flex;align-items:center;gap:8px">
+                <div class="admin-card-title">👥 Comerciales</div>
+                <button onclick="resetAllPasswords()" style="margin-left:auto;background:#E04B4B;border:1.5px solid #C03030;color:#fff;padding:5px 13px;border-radius:7px;font-family:Nunito,sans-serif;font-size:11px;font-weight:700;cursor:pointer">🔄 Reset General de Claves</button>
+              </div>
               <div class="admin-card-body">
+                <div style="background:#FFF8E1;border:1px solid #E6C200;border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#7A6200;line-height:1.5">
+                  ⚠ <strong>Reset General</strong>: contraseña provisoria = <strong>ID</strong> de cada usuario (ej: <em>gaston</em>, <em>julian</em>, <em>martin_h</em>). Cada uno deberá cambiarla al ingresar.
+                </div>
                 <div id="comerciales-list"></div>
                 <div class="admin-add-row" style="margin-top:12px">
                   <input class="admin-input" id="new-com-name" placeholder="Nombre comercial..." onkeydown="if(event.key==='Enter')addComercial()">
@@ -828,6 +836,8 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
               <option value="venta-cable">Venta CABLE (CABLE a ARS)</option>
               <option value="canje-mep-cable">Canje MEP a CABLE</option>
               <option value="canje-cable-mep">Canje CABLE a MEP</option>
+              <option value="compra-instrumento">Compra de Instrumentos</option>
+              <option value="venta-instrumento">Venta de Instrumentos</option>
             </select>
           </div>
           <div class="form-group">
@@ -957,20 +967,85 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                 style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
             </div>
           </div>
+          <!-- PPT ARS -->
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" id="lbl-precio-ppt">Precio PPT (ARS) <span style="font-size:9px;color:var(--text-muted)">Nom. x P.PPT</span></label>
+              <label class="form-label">Precio PPT <span style="background:rgba(27,42,107,0.08);color:var(--navy);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">ARS</span></label>
               <input class="form-input importe-field" id="f-precio-ppt" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
             </div>
             <div class="form-group">
-              <label class="form-label">Monto PPT <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.PPT)</span></label>
+              <label class="form-label">Monto PPT ARS <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.PPT / 100)</span></label>
               <input class="form-input" id="f-monto-ppt" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <!-- PPT MEP -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio PPT <span style="background:rgba(45,125,210,0.10);color:#2D7DD2;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">MEP</span></label>
+              <input class="form-input importe-field" id="f-precio-ppt-mep" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto PPT MEP <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.PPT / 100)</span></label>
+              <input class="form-input" id="f-monto-ppt-mep" placeholder="0,00" readonly style="background:#F4F6FB;color:#2D7DD2;font-weight:700;cursor:default">
+            </div>
+          </div>
+          <!-- PPT CABLE -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio PPT <span style="background:rgba(155,76,226,0.10);color:#7B35C4;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">CABLE</span></label>
+              <input class="form-input importe-field" id="f-precio-ppt-cable" placeholder="0,0000000" oninput="fmtSenebi(this);calcSenebiDirecto()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto PPT Cable <span style="font-size:9px;color:var(--text-muted)">(Nom. x P.PPT / 100)</span></label>
+              <input class="form-input" id="f-monto-ppt-cable" placeholder="0,00" readonly style="background:#F4F6FB;color:#7B35C4;font-weight:700;cursor:default">
+            </div>
+          </div>
+          <!-- Resultado -->
+          <div class="form-row full">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800" id="lbl-resultado-directo">Resultado <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto SENEBI - Monto PPT)</span></label>
+              <input class="form-input" id="f-resultado-directo" placeholder="0,00" readonly
+                style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
+            </div>
+          </div>
+        </div>
+
+        <!-- FORMULARIO COMPRA/VENTA DE INSTRUMENTOS -->
+        <div id="senebi-form-instrumento" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" id="lbl-inst-ticker">Ticker *</label>
+              <input class="form-input" id="f-inst-ticker" placeholder="Ej: AL30, AL30D, AL30C" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">VN / Nominales *</label>
+              <input class="form-input importe-field" id="f-inst-nominales" placeholder="0,00" oninput="fmtSenebi(this);calcInstrumento()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio Mesa Comercial *</label>
+              <input class="form-input importe-field" id="f-inst-precio-mesa" placeholder="0,0000000" oninput="fmtSenebi(this);calcInstrumento()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Precio Cliente *</label>
+              <input class="form-input importe-field" id="f-inst-precio-cliente" placeholder="0,0000000" oninput="fmtSenebi(this);calcInstrumento()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Monto Mesa <span style="font-size:9px;color:var(--text-muted)">(VN x P.Mesa / 100)</span></label>
+              <input class="form-input" id="f-inst-monto-mesa" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto Cliente <span style="font-size:9px;color:var(--text-muted)">(VN x P.Cliente / 100)</span></label>
+              <input class="form-input" id="f-inst-monto-cliente" placeholder="0,00" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
             </div>
           </div>
           <div class="form-row full">
             <div class="form-group">
-              <label class="form-label" style="color:var(--teal-dark);font-weight:800">Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto ARS SENEBI - Monto PPT)</span></label>
-              <input class="form-input" id="f-resultado-directo" placeholder="0,00" readonly
+              <label class="form-label" style="color:var(--teal-dark);font-weight:800" id="lbl-inst-resultado">Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto Mesa - Monto Cliente)</span></label>
+              <input class="form-input" id="f-inst-resultado" placeholder="0,00" readonly
                 style="background:#F4F6FB;color:var(--teal-dark);font-weight:800;cursor:default;font-size:15px">
             </div>
           </div>
@@ -986,6 +1061,117 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           <div id="senebi-venta-display" style="display:none"><span id="senebi-venta-text"></span></div>
         </div>
       </div>
+
+      <!-- ═══ PPT FIELDS ═══ -->
+      <div id="ppt-fields" style="display:none">
+        <!-- Fila 1: Tipo operación + Ticker -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo Operación *</label>
+            <select class="form-select" id="f-ppt-tipo">
+              <option value="">--</option>
+              <option value="COMPRA">COMPRA</option>
+              <option value="VENTA">VENTA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ticker *</label>
+            <input class="form-input" id="f-ppt-ticker" placeholder="Ej: AL30, GD30, TX26" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+          </div>
+        </div>
+        <!-- Fila 2: Moneda + TC -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Moneda *</label>
+            <select class="form-select" id="f-ppt-moneda" onchange="onPptMonedaChange()">
+              <option value="">--</option>
+              <option value="ARS">ARS (Pesos)</option>
+              <option value="MEP">USD MEP</option>
+              <option value="CABLE">USD Cable</option>
+            </select>
+          </div>
+          <div class="form-group" id="ppt-tc-group" style="display:none">
+            <label class="form-label">Tipo de Cambio *</label>
+            <input class="form-input importe-field" id="f-ppt-tc" placeholder="0,00" oninput="fmtSenebi(this);calcPPT()">
+          </div>
+        </div>
+        <!-- Fila 3: VN / Monto toggle -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ingresar por</label>
+            <div style="display:flex;gap:8px;margin-top:2px">
+              <button type="button" id="ppt-btn-vn" onclick="setPptModo('vn')"
+                style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--teal);background:var(--teal);color:#fff;font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer">
+                VN / Nominales
+              </button>
+              <button type="button" id="ppt-btn-monto" onclick="setPptModo('monto')"
+                style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer">
+                Monto
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="lbl-ppt-vn-monto">VN / Nominales *</label>
+            <input class="form-input importe-field" id="f-ppt-vn" placeholder="0,00" oninput="fmtSenebi(this);calcPPT()">
+          </div>
+        </div>
+        <!-- Fila 4: Precio + Arancel -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Precio *</label>
+            <input class="form-input importe-field" id="f-ppt-precio" placeholder="0,0000000" oninput="fmtSenebi(this);calcPPT()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Arancel</label>
+            <select class="form-select" id="f-ppt-arancel" onchange="calcPPT()">
+              <option value="0.005">Estándar (0,50%)</option>
+              <option value="0.003">Preferencial (0,30%)</option>
+            </select>
+          </div>
+        </div>
+        <!-- Resultados calculados -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:6px">
+          <div style="font-size:10px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Cálculo</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bruto <span id="lbl-ppt-moneda-bruto" style="font-size:9px;color:var(--text-muted)"></span></label>
+              <input class="form-input" id="f-ppt-bruto" readonly style="background:#fff;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Arancel <span id="lbl-ppt-moneda-arancel" style="font-size:9px;color:var(--text-muted)"></span></label>
+              <input class="form-input" id="f-ppt-arancel-monto" readonly style="background:#fff;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">IVA Arancel <span style="font-size:9px;color:var(--text-muted)">(en $)</span></label>
+              <input class="form-input" id="f-ppt-iva-arancel" readonly style="background:#fff;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label">DDMM <span style="font-size:9px;color:var(--text-muted)">(en $)</span></label>
+              <input class="form-input" id="f-ppt-ddmm" readonly style="background:#fff;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">IVA DDMM <span style="font-size:9px;color:var(--text-muted)">(en $)</span></label>
+              <input class="form-input" id="f-ppt-iva-ddmm" readonly style="background:#fff;color:var(--navy);font-weight:700;cursor:default">
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="lbl-ppt-neto-usd">Neto USD</label>
+              <input class="form-input" id="f-ppt-neto-usd" readonly style="background:#fff;color:var(--teal-dark);font-weight:800;cursor:default" placeholder="—">
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--navy);font-weight:800">Neto $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(IVA Arancel + DDMM + IVA DDMM)</span></label>
+              <input class="form-input" id="f-ppt-neto-pesos" readonly
+                style="background:#fff;color:var(--navy);font-weight:800;cursor:default;font-size:15px">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Comments -->
       <!-- Comments -->
       <div class="form-row full">
@@ -1097,6 +1283,125 @@ let currentFilter = 'all';
 let selectedClient = null;
 let selectedFondo  = null;
 let selectedBanco  = null;
+
+// ═══════════════════════════════════════════════════
+//  PPT MODULE
+// ═══════════════════════════════════════════════════
+let currentPptModo = 'vn'; // 'vn' o 'monto'
+
+function onPptMonedaChange() {
+  const moneda = document.getElementById('f-ppt-moneda').value;
+  const tcGroup = document.getElementById('ppt-tc-group');
+  const lblNetoUsd = document.getElementById('lbl-ppt-neto-usd');
+  if (moneda === 'MEP' || moneda === 'CABLE') {
+    tcGroup.style.display = '';
+    if (lblNetoUsd) lblNetoUsd.textContent = 'Neto ' + moneda;
+  } else {
+    tcGroup.style.display = 'none';
+    if (lblNetoUsd) lblNetoUsd.textContent = '—';
+    const el = document.getElementById('f-ppt-neto-usd');
+    if (el) el.value = '';
+  }
+  calcPPT();
+}
+
+function setPptModo(modo) {
+  currentPptModo = modo;
+  const btnVN    = document.getElementById('ppt-btn-vn');
+  const btnMonto = document.getElementById('ppt-btn-monto');
+  const lbl      = document.getElementById('lbl-ppt-vn-monto');
+  const inp      = document.getElementById('f-ppt-vn');
+  const act = 'border:1.5px solid var(--teal);background:var(--teal);color:#fff';
+  const inact = 'border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted)';
+  if (modo === 'vn') {
+    btnVN.style.cssText    += ';' + act;
+    btnMonto.style.cssText += ';' + inact;
+    if (lbl) lbl.textContent = 'VN / Nominales *';
+    if (inp) { inp.value = ''; inp.placeholder = '0,00'; }
+  } else {
+    btnMonto.style.cssText += ';' + act;
+    btnVN.style.cssText    += ';' + inact;
+    if (lbl) lbl.textContent = 'Monto *';
+    if (inp) { inp.value = ''; inp.placeholder = '0,00'; }
+  }
+  calcPPT();
+}
+
+function calcPPT() {
+  const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
+  const fmt2  = v => v !== 0 ? Math.abs(v).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const set   = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
+
+  const moneda   = document.getElementById('f-ppt-moneda')?.value || 'ARS';
+  const arancel  = parse('f-ppt-arancel');  // 0.005 o 0.003
+  const precio   = parse('f-ppt-precio');
+  const tc       = parse('f-ppt-tc');
+  const esUSD    = moneda === 'MEP' || moneda === 'CABLE';
+
+  // Calcular VN o Monto según modo
+  let vn = 0, bruto = 0;
+  if (currentPptModo === 'vn') {
+    vn    = parse('f-ppt-vn');
+    bruto = precio > 0 ? vn * precio / 100 : 0;
+  } else {
+    const monto = parse('f-ppt-vn'); // mismo campo
+    bruto = monto;
+    vn    = precio > 0 ? monto * 100 / precio : 0;
+  }
+
+  // Arancel
+  const arancelMonto = bruto * arancel;
+
+  // TC para convertir a pesos
+  const tcPesos = esUSD ? tc : 1;
+
+  // IVA Arancel (en pesos)
+  const ivaArancel = arancelMonto * tcPesos * 0.21;
+
+  // DDMM (en pesos) = Bruto * TC * 0.0009688
+  const ddmm    = bruto * tcPesos * 0.0009688;
+  const ivaDdmm = ddmm * 0.21;
+
+  // Neto USD (solo si es MEP/Cable)
+  const netoUSD = esUSD ? bruto - arancelMonto : 0;
+
+  // Neto $ = IVA Arancel + DDMM + IVA DDMM
+  const netoPesos = ivaArancel + ddmm + ivaDdmm;
+
+  // Labels moneda
+  const monedaTag = esUSD ? moneda : 'ARS';
+  const elBrutoLbl = document.getElementById('lbl-ppt-moneda-bruto');
+  const elArancLbl = document.getElementById('lbl-ppt-moneda-arancel');
+  if (elBrutoLbl)  elBrutoLbl.textContent  = '(' + monedaTag + ')';
+  if (elArancLbl)  elArancLbl.textContent  = '(' + monedaTag + ')';
+
+  set('f-ppt-bruto',        bruto > 0 ? fmt2(bruto) : '');
+  set('f-ppt-arancel-monto',arancelMonto > 0 ? fmt2(arancelMonto) : '');
+  set('f-ppt-iva-arancel',  ivaArancel > 0 ? fmt2(ivaArancel) : '');
+  set('f-ppt-ddmm',         ddmm > 0 ? fmt2(ddmm) : '');
+  set('f-ppt-iva-ddmm',     ivaDdmm > 0 ? fmt2(ivaDdmm) : '');
+  set('f-ppt-neto-usd',     esUSD && netoUSD > 0 ? fmt2(netoUSD) : '');
+  set('f-ppt-neto-pesos',   netoPesos > 0 ? fmt2(netoPesos) : '');
+}
+
+function resetPptFields() {
+  currentPptModo = 'vn';
+  ['f-ppt-ticker','f-ppt-vn','f-ppt-precio','f-ppt-tc',
+   'f-ppt-bruto','f-ppt-arancel-monto','f-ppt-iva-arancel',
+   'f-ppt-ddmm','f-ppt-iva-ddmm','f-ppt-neto-usd','f-ppt-neto-pesos'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  const s = document.getElementById('f-ppt-moneda'); if(s) s.value='';
+  const t = document.getElementById('f-ppt-tipo');   if(t) t.value='';
+  const a = document.getElementById('f-ppt-arancel');if(a) a.value='0.005';
+  const tcg = document.getElementById('ppt-tc-group'); if(tcg) tcg.style.display='none';
+  // reset botones modo
+  const btnVN = document.getElementById('ppt-btn-vn');
+  const btnM  = document.getElementById('ppt-btn-monto');
+  if(btnVN){ btnVN.style.background='var(--teal)'; btnVN.style.color='#fff'; btnVN.style.borderColor='var(--teal)'; }
+  if(btnM) { btnM.style.background='var(--surface2)'; btnM.style.color='var(--text-muted)'; btnM.style.borderColor='var(--border)'; }
+  const lbl = document.getElementById('lbl-ppt-vn-monto'); if(lbl) lbl.textContent='VN / Nominales *';
+}
 
 // ═══════════════════════════════════════════════════
 //  IMPORTE FORMATTING
@@ -1254,8 +1559,8 @@ function doLogout() {
 //  VIEWS
 // ═══════════════════════════════════════════════════
 const VIEW_TITLES = {
-  'fci-hoy':'FCI — Hoy','pagos-hoy':'Pagos — Hoy','conv-hoy':'Conversiones — Hoy','lic-hoy':'Licitaciones — Hoy','senebi-hoy':'SENEBI — Hoy',
-  'historial':'Historial Acumulado','senebi-hoy':'SENEBI — Hoy','admin':'Panel de Administración'
+  'fci-hoy':'FCI — Hoy','pagos-hoy':'Pagos — Hoy','conv-hoy':'Conversiones — Hoy','lic-hoy':'Licitaciones — Hoy','senebi-hoy':'SENEBI — Hoy','ppt-hoy':'PPT — Hoy',
+  'historial':'Historial Acumulado','admin':'Panel de Administración'
 };
 
 function showView(view) {
@@ -1300,6 +1605,9 @@ function setModalFields(view) {
   } else if (view === 'senebi-hoy') {
     tipo.innerHTML = '<option value="">—</option><option>SENEBI</option>';
     showFields('senebi');
+  } else if (view === 'ppt-hoy') {
+    tipo.innerHTML = '<option value="">—</option><option>PPT</option>';
+    showFields('ppt');
   }
 }
 function onTipoChange() {
@@ -1323,16 +1631,18 @@ function onTipoChange() {
   else if (t === 'CONVERSION') showFields('conv');
   else if (t === 'LICITACION') showFields('lic');
   else if (t === 'SENEBI') showFields('senebi');
+  else if (t === 'PPT') showFields('ppt');
   else showFields('fci');
 }
 
 function showFields(type) {
-  document.getElementById('fci-fields').style.display  = (type==='fci')  ? 'block':'none';
-  document.getElementById('pago-fields').style.display = (type==='pago') ? 'block':'none';
-  document.getElementById('conv-fields').style.display = (type==='conv') ? 'block':'none';
-  document.getElementById('lic-fields').style.display    = (type==='lic')    ? 'block':'none';
-  document.getElementById('senebi-fields').style.display = (type==='senebi') ? 'block':'none';
-  document.getElementById('cliente-group').style.display = (type==='senebi') ? 'none':'block';
+  document.getElementById('fci-fields').style.display   = (type==='fci')    ? 'block':'none';
+  document.getElementById('pago-fields').style.display  = (type==='pago')   ? 'block':'none';
+  document.getElementById('conv-fields').style.display  = (type==='conv')   ? 'block':'none';
+  document.getElementById('lic-fields').style.display   = (type==='lic')    ? 'block':'none';
+  document.getElementById('senebi-fields').style.display= (type==='senebi') ? 'block':'none';
+  document.getElementById('ppt-fields').style.display   = (type==='ppt')    ? 'block':'none';
+  document.getElementById('cliente-group').style.display= (type==='senebi'||type==='ppt') ? 'none':'block';
 }
 
 function addHabilDays(dateStr, days) {
@@ -1376,7 +1686,7 @@ function setFilter(f, el) {
 //  TABLE
 // ═══════════════════════════════════════════════════
 function getTabName(view) {
-  return {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',senebi:'senebi','senebi-hoy':'senebi'}[view] || view.replace('-hoy','');
+  return {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',senebi:'senebi','senebi-hoy':'senebi',ppt:'ppt','ppt-hoy':'ppt'}[view] || view.replace('-hoy','');
 }
 
 function getTodayOrders() {
@@ -1434,22 +1744,50 @@ const senebiMontoLabels = {
   'canje-mep-cable':  'USD MEP a canjear',
   'canje-cable-mep':  'USD CABLE a canjear',
 };
+const SENEBI_INSTRUMENTO_OPS = ['compra-instrumento', 'venta-instrumento'];
 
 function onSenebiOperacionChange() {
   const op = document.getElementById('f-senebi-operacion').value;
-  const rowMonto  = document.getElementById('senebi-row-monto');
-  const tipoWrap  = document.getElementById('senebi-tipo-wrap');
-  const lblMonto  = document.getElementById('lbl-senebi-monto');
-  if (op) {
-    rowMonto.style.display  = '';
-    tipoWrap.style.display  = '';
-    if (lblMonto && senebiMontoLabels[op]) lblMonto.textContent = senebiMontoLabels[op];
-  } else {
-    rowMonto.style.display  = 'none';
-    tipoWrap.style.display  = 'none';
-    document.getElementById('senebi-form-mesa').style.display    = 'none';
-    document.getElementById('senebi-form-directo').style.display = 'none';
+  const rowMonto       = document.getElementById('senebi-row-monto');
+  const tipoWrap       = document.getElementById('senebi-tipo-wrap');
+  const lblMonto       = document.getElementById('lbl-senebi-monto');
+  const formMesa       = document.getElementById('senebi-form-mesa');
+  const formDirecto    = document.getElementById('senebi-form-directo');
+  const formInstrumento= document.getElementById('senebi-form-instrumento');
+
+  // Ocultar todo primero
+  formMesa.style.display        = 'none';
+  formDirecto.style.display     = 'none';
+  formInstrumento.style.display = 'none';
+
+  if (!op) {
+    rowMonto.style.display = 'none';
+    tipoWrap.style.display = 'none';
     currentSenebiTipo = null;
+    return;
+  }
+
+  if (SENEBI_INSTRUMENTO_OPS.includes(op)) {
+    // Compra/Venta de instrumentos: sin monto USD, sin selector mesa/directo
+    rowMonto.style.display = 'none';
+    tipoWrap.style.display = 'none';
+    formInstrumento.style.display = 'block';
+    currentSenebiTipo = 'instrumento';
+    // Actualizar label de resultado según operación
+    const lblRes = document.getElementById('lbl-inst-resultado');
+    if (lblRes) {
+      if (op === 'venta-instrumento') {
+        lblRes.innerHTML = 'Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto Mesa - Monto Cliente) — cliente vende, mesa compra más caro</span>';
+      } else {
+        lblRes.innerHTML = 'Resultado $ <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto Cliente - Monto Mesa) — cliente compra, mesa vende más caro</span>';
+      }
+    }
+  } else {
+    // Operaciones normales
+    rowMonto.style.display = '';
+    tipoWrap.style.display = '';
+    currentSenebiTipo = null;
+    if (lblMonto && senebiMontoLabels[op]) lblMonto.textContent = senebiMontoLabels[op];
   }
 }
 
@@ -1502,6 +1840,41 @@ function calcResultadoSenebi() {
   }
 }
 
+// ── Calculo Compra/Venta de Instrumentos ──
+function calcInstrumento() {
+  const parse = id => {
+    const v = (document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.');
+    return parseFloat(v) || 0;
+  };
+  const vn          = parse('f-inst-nominales');
+  const pMesa       = parse('f-inst-precio-mesa');
+  const pCliente    = parse('f-inst-precio-cliente');
+  const op          = document.getElementById('f-senebi-operacion')?.value||'';
+  const fmt2 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+
+  const montoMesa    = document.getElementById('f-inst-monto-mesa');
+  const montoCliente = document.getElementById('f-inst-monto-cliente');
+  const resultado    = document.getElementById('f-inst-resultado');
+
+  const mMesa    = (vn > 0 && pMesa > 0)    ? vn * pMesa / 100    : 0;
+  const mCliente = (vn > 0 && pCliente > 0) ? vn * pCliente / 100 : 0;
+
+  if (montoMesa)    montoMesa.value    = mMesa    > 0 ? fmt2(mMesa)    : '';
+  if (montoCliente) montoCliente.value = mCliente > 0 ? fmt2(mCliente) : '';
+
+  if (resultado) {
+    if (mMesa > 0 && mCliente > 0) {
+      // Venta instrumento: cliente vende, mesa compra → mesa paga más = resultado positivo
+      // Compra instrumento: cliente compra, mesa vende → cliente paga más = resultado positivo
+      const res = op === 'venta-instrumento' ? mMesa - mCliente : mCliente - mMesa;
+      resultado.value = fmt2(Math.abs(res));
+      resultado.style.color = res >= 0 ? 'var(--teal-dark)' : '#E04B4B';
+    } else {
+      resultado.value = '';
+    }
+  }
+}
+
 // Sufijos por operacion para tickers
 const senebiSufijos = {
   'compra-mep':      {ars:'',    usd:'D'},
@@ -1542,24 +1915,52 @@ function onTickerBaseChange() {
 // TC implicito directo
 function calcSenebiDirecto() {
   const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
-  const nominales = parse('f-nominales');
-  const precioARS = parse('f-precio-ars');
-  const precioUSD = parse('f-precio-usd');
-  const precioPPT = parse('f-precio-ppt');
+  const nominales    = parse('f-nominales');
+  const precioARS    = parse('f-precio-ars');
+  const precioUSD    = parse('f-precio-usd');
+  const precioPPT    = parse('f-precio-ppt');
+  const precioPPTmep = parse('f-precio-ppt-mep');
+  const precioPPTcab = parse('f-precio-ppt-cable');
   const fmt2 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
   const fmt7 = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:7}) : '';
-  const montoARS = nominales * precioARS;
-  const montoPPT = nominales * precioPPT;
-  const el1 = document.getElementById('f-monto-ars-dir');
-  const el2 = document.getElementById('f-monto-usd-dir');
-  const el3 = document.getElementById('f-tc-implicito');
-  const el4 = document.getElementById('f-monto-ppt');
-  const el5 = document.getElementById('f-resultado-directo');
-  if (el1) el1.value = fmt2(montoARS);
-  if (el2) el2.value = fmt2(nominales * precioUSD);
-  if (el3) el3.value = (precioARS > 0 && precioUSD > 0) ? fmt7(precioARS / precioUSD) : '';
-  if (el4) el4.value = precioPPT > 0 ? fmt2(montoPPT) : '';
-  if (el5) el5.value = (montoARS > 0 && montoPPT > 0) ? fmt2(Math.abs(montoARS - montoPPT)) : '';
+
+  const montoARS    = nominales * precioARS;
+  const montoUSD    = nominales * precioUSD;
+  const montoPPT    = nominales * precioPPT    / 100;
+  const montoPPTmep = nominales * precioPPTmep / 100;
+  const montoPPTcab = nominales * precioPPTcab / 100;
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+  set('f-monto-ars-dir',   fmt2(montoARS));
+  set('f-monto-usd-dir',   fmt2(montoUSD));
+  set('f-tc-implicito',    (precioARS > 0 && precioUSD > 0) ? fmt7(precioARS / precioUSD) : '');
+  set('f-monto-ppt',       precioPPT    > 0 ? fmt2(montoPPT)    : '');
+  set('f-monto-ppt-mep',   precioPPTmep > 0 ? fmt2(montoPPTmep) : '');
+  set('f-monto-ppt-cable', precioPPTcab > 0 ? fmt2(montoPPTcab) : '');
+
+  // Resultado: prioridad ARS > MEP > CABLE
+  const elRes  = document.getElementById('f-resultado-directo');
+  const elLbl  = document.getElementById('lbl-resultado-directo');
+  if (elRes) {
+    if (precioPPT > 0 && montoARS > 0) {
+      elRes.value = fmt2(Math.abs(montoARS - montoPPT));
+      if (elLbl) elLbl.innerHTML = 'Resultado <span style="background:rgba(27,42,107,0.08);color:var(--navy);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">ARS</span> <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto ARS - Monto PPT ARS)</span>';
+      elRes.style.color = 'var(--teal-dark)';
+    } else if (precioPPTmep > 0 && montoUSD > 0) {
+      elRes.value = fmt2(Math.abs(montoUSD - montoPPTmep));
+      if (elLbl) elLbl.innerHTML = 'Resultado <span style="background:rgba(45,125,210,0.10);color:#2D7DD2;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">MEP</span> <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto USD - Monto PPT MEP)</span>';
+      elRes.style.color = '#2D7DD2';
+    } else if (precioPPTcab > 0 && montoUSD > 0) {
+      elRes.value = fmt2(Math.abs(montoUSD - montoPPTcab));
+      if (elLbl) elLbl.innerHTML = 'Resultado <span style="background:rgba(155,76,226,0.10);color:#7B35C4;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">CABLE</span> <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto USD - Monto PPT Cable)</span>';
+      elRes.style.color = '#7B35C4';
+    } else {
+      elRes.value = '';
+      if (elLbl) elLbl.innerHTML = 'Resultado <span style="font-size:9px;font-weight:600;color:var(--text-muted)">(Monto SENEBI - Monto PPT)</span>';
+      elRes.style.color = 'var(--teal-dark)';
+    }
+  }
 }
 
 function calcMonto() { /* legacy */ }
@@ -1662,7 +2063,7 @@ function editOrder(id) {
   if (!o) return;
   // Permission check
   if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
-  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy'};
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
@@ -1716,14 +2117,40 @@ function editOrder(id) {
           el=document.getElementById('f-nominales'); if(el) el.value=o.nominales||'';
           el=document.getElementById('f-precio-ars'); if(el) el.value=o.precioArs||'';
           el=document.getElementById('f-precio-usd'); if(el) el.value=o.precioUsd||'';
-          el=document.getElementById('f-precio-ppt'); if(el) el.value=o.precioPpt||'';
-          el=document.getElementById('f-monto-ars-dir'); if(el) el.value=o.montoArs||'';
-          el=document.getElementById('f-monto-usd-dir'); if(el) el.value=o.montoUsd||'';
-          el=document.getElementById('f-monto-ppt'); if(el) el.value=o.montoPpt||'';
+          el=document.getElementById('f-precio-ppt');       if(el) el.value=o.precioPpt||o.precioPptMep||o.precioPptCable||'';
+          el=document.getElementById('f-precio-ppt-mep');    if(el) el.value=o.precioPptMep||'';
+          el=document.getElementById('f-precio-ppt-cable');  if(el) el.value=o.precioPptCable||'';
+          el=document.getElementById('f-monto-ars-dir');     if(el) el.value=o.montoArs||'';
+          el=document.getElementById('f-monto-usd-dir');     if(el) el.value=o.montoUsd||'';
+          el=document.getElementById('f-monto-ppt');         if(el) el.value=o.montoPpt||'';
+          el=document.getElementById('f-monto-ppt-mep');     if(el) el.value=o.montoPptMep||'';
+          el=document.getElementById('f-monto-ppt-cable');   if(el) el.value=o.montoPptCable||'';
           el=document.getElementById('f-tc-implicito'); if(el) el.value=o.tcImplicito||'';
           el=document.getElementById('f-resultado-directo'); if(el) el.value=o.resultado||'';
+        } else if (o.senebiTipo==='instrumento') {
+          var el;
+          el=document.getElementById('f-inst-ticker');        if(el) el.value=o.instTicker||'';
+          el=document.getElementById('f-inst-nominales');     if(el) el.value=o.instNominales||'';
+          el=document.getElementById('f-inst-precio-mesa');   if(el) el.value=o.instPrecioMesa||'';
+          el=document.getElementById('f-inst-precio-cliente');if(el) el.value=o.instPrecioCliente||'';
+          el=document.getElementById('f-inst-monto-mesa');    if(el) el.value=o.instMontoMesa||'';
+          el=document.getElementById('f-inst-monto-cliente'); if(el) el.value=o.instMontoCliente||'';
+          el=document.getElementById('f-inst-resultado');     if(el) el.value=o.resultado||'';
         }
       }
+    }
+    if (o.tab==='ppt') {
+      resetPptFields();
+      const s = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+      s('f-ppt-tipo',   o.pptTipo);
+      s('f-ppt-ticker', o.pptTicker);
+      s('f-ppt-precio', o.pptPrecio);
+      s('f-ppt-vn',     o.pptVn);
+      const selM = document.getElementById('f-ppt-moneda'); if(selM) { selM.value=o.pptMoneda||''; onPptMonedaChange(); }
+      s('f-ppt-tc',     o.pptTc);
+      const selA = document.getElementById('f-ppt-arancel'); if(selA) selA.value=o.pptArancelTasa||'0.005';
+      if (o.pptModo) setPptModo(o.pptModo);
+      calcPPT();
     }
     window._editingId=id; window._editingFbKey=o.fbKey;
     document.getElementById('modal-title').textContent='Editando Orden '+id;
@@ -1749,13 +2176,14 @@ function renderTable() {
 
   // Columns: ID → Fecha → Tipo → Comitente → Cliente → [extra] → Importe → [Moneda] → Prioridad → Estado → Comercial(admin)
   let cols = ['ID','Fecha','Tipo'];
-  if (tab!=='senebi') cols.push('Comitente','Cliente');
+  if (tab!=='senebi' && tab!=='ppt') cols.push('Comitente','Cliente');
   if (tab==='fci')    cols.push('Fondo','Moneda');
   if (tab==='pagos')  cols.push('Banco','Moneda');
   if (tab==='conv')   cols.push('Moneda Conv.','Fecha Liq.');
   if (tab==='lic')    cols.push('Denominación','Precio/Tasa','Cantidad','Moneda Int.');
   if (tab==='senebi') cols.push('Comitente','Operacion','Metodo','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','P.PPT','TC / TC Imp.','Monto ARS','Monto USD','Monto PPT','Resultado');
-  if (tab!=='lic' && tab!=='senebi') cols.push('Importe');
+  if (tab==='ppt')    cols.push('Operación','Ticker','Moneda','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $');
+  if (tab!=='lic' && tab!=='senebi' && tab!=='ppt') cols.push('Importe');
   cols.push('Prioridad','Estado');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
   cols.push('');
@@ -1771,7 +2199,7 @@ function renderTable() {
   }
 
   body.innerHTML = rows.map((o, idx) => { o.nro = idx + 1;
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi'}[o.tipo]||'';
+    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const pClass = o.prioridad ? 'p-'+o.prioridad : '';
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
@@ -1781,23 +2209,37 @@ function renderTable() {
     if (tab==='pagos') extraCols = `<td style="font-size:12px" data-tip="${o.banco||''}">${o.banco||'—'}</td><td><span class="tipo-badge" data-tip="${o.moneda||''}">${o.moneda||'—'}</span></td>`;
     if (tab==='conv')  extraCols = `<td><span class="tipo-badge t-conversion" data-tip="${o.monedaConv||''}">${o.monedaConv||'—'}</span></td><td class="id-mono" data-tip="${o.fechaLiq||''}">${o.fechaLiq||'—'}</td>`;
     if (tab==='lic')    extraCols = `<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.denominacion||''}">${o.denominacion||'—'}</td><td class="id-mono" data-tip="${o.precioTasa||''}">${o.precioTasa||'—'}</td><td class="id-mono" data-tip="${o.cantidad||''}">${o.cantidad||'—'}</td><td><span class="tipo-badge" data-tip="${o.monedaLic||''}">${o.monedaLic||'—'}</span></td>`;
+    if (tab==='ppt') {
+      extraCols = `<td style="font-size:11px;font-weight:700;color:var(--navy)">${o.pptTipo||'—'}</td>`
+        + `<td class="id-mono" style="font-size:11px">${o.pptTicker||'—'}</td>`
+        + `<td><span class="tipo-badge" style="font-size:10px">${o.pptMoneda||'—'}</span></td>`
+        + `<td class="id-mono">${o.pptVn||'—'}</td>`
+        + `<td class="id-mono">${o.pptPrecio||'—'}</td>`
+        + `<td class="id-mono" style="font-weight:700">${o.pptBruto||'—'}</td>`
+        + `<td class="id-mono">${o.pptArancelMonto||'—'}</td>`
+        + `<td class="id-mono">${o.pptIvaArancel||'—'}</td>`
+        + `<td class="id-mono">${o.pptDdmm||'—'}</td>`
+        + `<td class="id-mono">${o.pptIvaDdmm||'—'}</td>`
+        + `<td class="id-mono" style="color:var(--teal-dark);font-weight:700">${o.pptNetoUsd||'—'}</td>`
+        + `<td class="id-mono" style="font-weight:800;color:var(--navy)">${o.pptNetoPesos||'—'}</td>`;
+    }
     if (tab==='senebi') {
-      const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP'};
+      const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
       const opLabel  = opLabels[o.senebiOperacion] || o.senebiOperacion || '—';
-      const metodo   = o.senebiTipo==='mesa' ? 'Con Mesa' : o.senebiTipo==='directo' ? 'Directo' : '—';
+      const metodo   = o.senebiTipo==='mesa' ? 'Con Mesa' : o.senebiTipo==='directo' ? 'Directo' : o.senebiTipo==='instrumento' ? 'Instrumento' : '—';
       const plazo    = o.plazo||'—';
       const comitente= o.comitenteCompra ? `${o.comitenteCompra}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,14)}</small>` : '—';
-      // Con Mesa
-      const tcShow   = o.senebiTipo==='mesa' ? (o.tcCliente||'—') : (o.tcImplicito||'—');
-      const montoArs = o.senebiTipo==='mesa' ? (o.arsCliente||'—') : (o.montoArs||'—');
-      const montoUsd = o.senebiTipo==='mesa' ? (o.montoSenebi||'—') : (o.montoUsd||'—');
+      // Con Mesa / Directo / Instrumento
+      const tcShow   = o.senebiTipo==='mesa' ? (o.tcCliente||'—') : o.senebiTipo==='instrumento' ? (o.instPrecioMesa||'—') : (o.tcImplicito||'—');
+      const montoArs = o.senebiTipo==='mesa' ? (o.arsCliente||'—') : o.senebiTipo==='instrumento' ? (o.instMontoMesa||'—') : (o.montoArs||'—');
+      const montoUsd = o.senebiTipo==='mesa' ? (o.montoSenebi||'—') : o.senebiTipo==='instrumento' ? (o.instMontoCliente||'—') : (o.montoUsd||'—');
       const resultado= o.resultado||'—';
-      // Directo
-      const tickerArs = o.tickerArs||'—';
-      const tickerUsd = o.tickerUsd||'—';
-      const nominales = o.nominales||'—';
-      const pArs      = o.precioArs||'—';
-      const pUsd      = o.precioUsd||'—';
+      // Directo / Instrumento
+      const tickerArs = o.senebiTipo==='instrumento' ? (o.instTicker||'—') : (o.tickerArs||'—');
+      const tickerUsd = o.senebiTipo==='instrumento' ? '—' : (o.tickerUsd||'—');
+      const nominales = o.senebiTipo==='instrumento' ? (o.instNominales||'—') : (o.nominales||'—');
+      const pArs      = o.senebiTipo==='instrumento' ? (o.instPrecioCliente||'—') : (o.precioArs||'—');
+      const pUsd      = o.senebiTipo==='instrumento' ? '—' : (o.precioUsd||'—');
       extraCols = `<td class="senebi-cte" data-tip="${o.comitenteCompra||''} - ${o.nombreCompra||''}">${comitente}</td>`
         + `<td style="font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap">${opLabel}</td>`
         + `<td><span class="tipo-badge" style="font-size:10px">${metodo}</span></td>`
@@ -1807,7 +2249,7 @@ function renderTable() {
         + `<td class="id-mono">${nominales}</td>`
         + `<td class="id-mono" style="font-size:11px">${pArs}</td>`
         + `<td class="id-mono" style="font-size:11px">${pUsd}</td>`
-        + `<td class="id-mono" style="font-size:11px">${o.precioPpt||'—'}</td>`
+        + `<td class="id-mono" style="font-size:11px">${o.precioPpt||o.precioPptMep||o.precioPptCable||'—'}</td>`
         + `<td class="id-mono" style="color:var(--teal-dark);font-weight:700">${tcShow}</td>`
         + `<td class="id-mono" style="font-weight:700">${montoArs}</td>`
         + `<td class="id-mono" style="font-weight:700">${montoUsd}</td>`
@@ -1830,10 +2272,10 @@ function renderTable() {
       <td class="id-mono" data-tip="${o.id}">${o.nro||o.id}</td>
       <td class="id-mono" data-tip="${o.fecha}">${o.fecha}</td>
       <td><span class="tipo-badge ${tipoClass}" data-tip="${o.tipo}">${o.tipo}</span></td>
-      ${tab!=='senebi' ? `<td class="id-mono" data-tip="${o.comitente}">${o.comitente}</td>` : ''}
-      ${tab!=='senebi' ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.cliente}">${o.cliente}</td>` : ''}
+      ${(tab!=='senebi'&&tab!=='ppt') ? `<td class="id-mono" data-tip="${o.comitente}">${o.comitente}</td>` : ''}
+      ${(tab!=='senebi'&&tab!=='ppt') ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.cliente}">${o.cliente}</td>` : ''}
       ${extraCols}
-      ${(tab!=='lic'&&tab!=='senebi') ? `<td class="id-mono" style="font-weight:700;color:var(--text)" data-tip="${o.importe||''}">${o.importe||'—'}</td>` : ''}
+      ${(tab!=='lic'&&tab!=='senebi'&&tab!=='ppt') ? `<td class="id-mono" style="font-weight:700;color:var(--text)" data-tip="${o.importe||''}">${o.importe||'—'}</td>` : ''}
       <td data-tip="${o.prioridad||''}">${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
@@ -1895,17 +2337,207 @@ function renderHistorial() {
     if (tipo==='conversiones') return o.tab==='conv';
     if (tipo==='licitaciones') return o.tab==='lic';
     if (tipo==='senebi') return o.tab==='senebi';
+    if (tipo==='ppt') return o.tab==='ppt';
     return true;
   });
   if (estado)   rows = rows.filter(o => o.estado === estado);
   if (comercial)rows = rows.filter(o => o.solicitadoPor === comercial);
 
-  // Sort by date desc
   rows.sort((a,b) => b.fecha.localeCompare(a.fecha));
 
-  const isAdmin = currentUser.isAdmin;
-  const cols = ['ID','Fecha','Tipo','Comitente','Cliente','Detalle','Importe','Estado'];
-  if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
+  const showComercial = currentUser.isAdmin || isSuperComercial();
+
+  // ── Definir columnas según tipo filtrado ──
+  let cols, buildRow, buildCsvRow;
+
+  if (tipo === 'fci') {
+    cols = ['ID','Fecha','Tipo','Comitente','Cliente','Fondo','Moneda','Importe','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const tipoClass = 't-suscripcion';
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge ${{SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate'}[o.tipo]||''}">${o.tipo}</span></td>
+        <td class="id-mono">${o.comitente}</td>
+        <td style="font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+        <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.fondo||''}">${o.fondo||'—'}</td>
+        <td><span class="tipo-badge">${o.monedaFci||'—'}</span></td>
+        <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.fondo||'',o.monedaFci||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+
+  } else if (tipo === 'pagos') {
+    cols = ['ID','Fecha','Tipo','Comitente','Cliente','Banco','Moneda','Importe','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge t-pago">${o.tipo}</span></td>
+        <td class="id-mono">${o.comitente}</td>
+        <td style="font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+        <td style="font-size:12px" data-tip="${o.banco||''}">${o.banco||'—'}</td>
+        <td><span class="tipo-badge">${o.moneda||'—'}</span></td>
+        <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.banco||'',o.moneda||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+
+  } else if (tipo === 'conversiones') {
+    cols = ['ID','Fecha','Tipo','Comitente','Cliente','Moneda Conv','Fecha Liq','Importe','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge t-conversion">${o.tipo}</span></td>
+        <td class="id-mono">${o.comitente}</td>
+        <td style="font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+        <td><span class="tipo-badge t-conversion">${o.monedaConv||'—'}</span></td>
+        <td class="id-mono">${o.fechaLiq||'—'}</td>
+        <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.monedaConv||'',o.fechaLiq||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+
+  } else if (tipo === 'licitaciones') {
+    cols = ['ID','Fecha','Tipo','Comitente','Cliente','Denominación','Precio/Tasa','Cantidad','Moneda','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge t-licitacion">${o.tipo}</span></td>
+        <td class="id-mono">${o.comitente}</td>
+        <td style="font-weight:700;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+        <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.denominacion||''}">${o.denominacion||'—'}</td>
+        <td class="id-mono">${o.precioTasa||'—'}</td>
+        <td class="id-mono">${o.cantidad||'—'}</td>
+        <td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.denominacion||'',o.precioTasa||'',o.cantidad||'',o.monedaLic||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+
+  } else if (tipo === 'senebi') {
+    cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P. ARS','P. USD','P. PPT','TC/Impl.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado'];
+    if (showComercial) cols.push('Comercial');
+    const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
+    buildRow = o => {
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      const opLabel = opLabels[o.senebiOperacion]||o.senebiOperacion||'—';
+      const metodo = o.senebiTipo==='mesa'?'Con Mesa':o.senebiTipo==='directo'?'Directo':o.senebiTipo==='instrumento'?'Instrumento':'—';
+      const tcShow = o.senebiTipo==='mesa'?(o.tcCliente||'—'):o.senebiTipo==='instrumento'?(o.instPrecioMesa||'—'):(o.tcImplicito||'—');
+      const montoArs = o.senebiTipo==='mesa'?(o.arsCliente||'—'):o.senebiTipo==='instrumento'?(o.instMontoMesa||'—'):(o.montoArs||'—');
+      const montoUsd = o.senebiTipo==='mesa'?(o.montoSenebi||'—'):o.senebiTipo==='instrumento'?(o.instMontoCliente||'—'):(o.montoUsd||'—');
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td class="id-mono">${o.comitenteCompra||'—'}</td>
+        <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.nombreCompra||''}">${o.nombreCompra||'—'}</td>
+        <td style="font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap">${opLabel}</td>
+        <td><span class="tipo-badge" style="font-size:10px">${metodo}</span></td>
+        <td>${o.plazo||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.tickerArs||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.tickerUsd||'—'}</td>
+        <td class="id-mono">${o.nominales||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.precioArs||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.precioUsd||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.precioPpt||'—'}</td>
+        <td class="id-mono" style="color:var(--teal-dark);font-weight:700">${tcShow}</td>
+        <td class="id-mono" style="font-weight:700">${montoArs}</td>
+        <td class="id-mono" style="font-weight:700">${montoUsd}</td>
+        <td class="id-mono" style="font-weight:700">${o.montoPpt||'—'}</td>
+        <td class="id-mono" style="color:var(--teal-dark);font-weight:800">${o.resultado||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => {
+      const opLabel = opLabels[o.senebiOperacion]||o.senebiOperacion||'';
+      const metodo = o.senebiTipo==='mesa'?'Con Mesa':o.senebiTipo==='directo'?'Directo':o.senebiTipo==='instrumento'?'Instrumento':'';
+      const tcShow = o.senebiTipo==='mesa'?(o.tcCliente||''):o.senebiTipo==='instrumento'?(o.instPrecioMesa||''):(o.tcImplicito||'');
+      const montoArs = o.senebiTipo==='mesa'?(o.arsCliente||''):o.senebiTipo==='instrumento'?(o.instMontoMesa||''):(o.montoArs||'');
+      const montoUsd = o.senebiTipo==='mesa'?(o.montoSenebi||''):o.senebiTipo==='instrumento'?(o.instMontoCliente||''):(o.montoUsd||'');
+      return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||'',o.tickerArs||'',o.tickerUsd||'',o.nominales||'',o.precioArs||'',o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+    };
+
+  } else if (tipo === 'ppt') {
+    cols = ['ID','Fecha','Tipo','Operación','Ticker','Moneda','TC','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge t-ppt">${o.tipo}</span></td>
+        <td style="font-size:11px;font-weight:700;color:var(--navy)">${o.pptTipo||'—'}</td>
+        <td class="id-mono" style="font-weight:700">${o.pptTicker||'—'}</td>
+        <td><span class="tipo-badge" style="font-size:10px">${o.pptMoneda||'—'}</span></td>
+        <td class="id-mono">${o.pptTc||'—'}</td>
+        <td class="id-mono">${o.pptVn||'—'}</td>
+        <td class="id-mono">${o.pptPrecio||'—'}</td>
+        <td class="id-mono" style="font-weight:700">${o.pptBruto||'—'}</td>
+        <td class="id-mono">${o.pptArancelMonto||'—'}</td>
+        <td class="id-mono">${o.pptIvaArancel||'—'}</td>
+        <td class="id-mono">${o.pptDdmm||'—'}</td>
+        <td class="id-mono">${o.pptIvaDdmm||'—'}</td>
+        <td class="id-mono" style="color:var(--teal-dark);font-weight:700">${o.pptNetoUsd||'—'}</td>
+        <td class="id-mono" style="font-weight:800;color:var(--navy)">${o.pptNetoPesos||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => [o.id,o.fecha,o.tipo,o.pptTipo||'',o.pptTicker||'',o.pptMoneda||'',o.pptTc||'',o.pptVn||'',o.pptPrecio||'',o.pptBruto||'',o.pptArancelMonto||'',o.pptIvaArancel||'',o.pptDdmm||'',o.pptIvaDdmm||'',o.pptNetoUsd||'',o.pptNetoPesos||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+
+  } else {
+    // Todos los tipos — tabla genérica
+    cols = ['ID','Fecha','Tipo','Comitente','Cliente','Detalle','Importe','Estado'];
+    if (showComercial) cols.push('Comercial');
+    buildRow = o => {
+      const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
+      const sKey = 's-'+(o.estado||'').replace(' ','-');
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      let detalle = o.fondo || o.banco || o.monedaConv || '—';
+      if (o.moneda) detalle += ' · '+o.moneda;
+      return `<tr>
+        <td class="id-mono">${o.id}</td>
+        <td class="id-mono">${o.fecha}</td>
+        <td><span class="tipo-badge ${tipoClass}">${o.tipo}</span></td>
+        <td class="id-mono">${o.comitente}</td>
+        <td style="font-weight:700;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${detalle}</td>
+        <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
+        <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+        ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+      </tr>`;
+    };
+    buildCsvRow = o => {
+      const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
+      let detalle = o.fondo || o.banco || o.monedaConv || '';
+      if (o.moneda) detalle += ' · '+o.moneda;
+      return [o.id,o.fecha,o.tipo,o.comitente,o.cliente,detalle,o.importe||'',o.estado, ...(showComercial?[comName]:[])];
+    };
+  }
 
   document.getElementById('hist-head').innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
   const body = document.getElementById('hist-body');
@@ -1915,41 +2547,28 @@ function renderHistorial() {
     return;
   }
 
-  body.innerHTML = rows.map(o => {
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi'}[o.tipo]||'';
-    const sKey = 's-'+(o.estado||'').replace(' ','-');
-    const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
-    let detalle = o.fondo || o.banco || o.monedaConv || '—';
-    if (o.moneda) detalle += ' · '+o.moneda;
-    const comCol = isAdmin ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
-    return `<tr>
-      <td class="id-mono">${o.id}</td>
-      <td class="id-mono">${o.fecha}</td>
-      <td><span class="tipo-badge ${tipoClass}">${o.tipo}</span></td>
-      <td class="id-mono">${o.comitente}</td>
-      <td style="font-weight:700;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.cliente}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${detalle}</td>
-      <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
-      <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
-      ${comCol}
-    </tr>`;
-  }).join('');
+  body.innerHTML = rows.map(buildRow).join('');
 
+  // Guardar para exportar
+  window._histExportRows = rows;
+  window._histExportBuildCsvRow = buildCsvRow;
+  window._histExportCols = cols;
 }
 
 function exportHistorialXLSX() {
-  const rows = document.querySelectorAll('#hist-body tr');
-  if (!rows.length || rows[0].querySelector('.empty-state')) { showToast('No hay datos para exportar'); return; }
-  const headers = [...document.querySelectorAll('#hist-head th')].map(th => th.textContent);
-  let csv = headers.join(';') + '\n';
-  rows.forEach(tr => {
-    const cells = [...tr.querySelectorAll('td')].map(td => '"'+td.textContent.trim().replace(/"/g,'""')+'"');
+  if (!window._histExportRows || !window._histExportRows.length) { showToast('No hay datos para exportar'); return; }
+  const cols = window._histExportCols;
+  const buildCsvRow = window._histExportBuildCsvRow;
+  let csv = cols.map(c=>'"'+c+'"').join(';') + '\n';
+  window._histExportRows.forEach(o => {
+    const cells = buildCsvRow(o).map(v => '"'+(v||'').toString().replace(/"/g,'""')+'"');
     csv += cells.join(';') + '\n';
   });
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'aurum-historial-'+TODAY+'.csv';
+  const tipo = document.getElementById('hist-tipo').value || 'todos';
+  a.download = 'aurum-historial-'+tipo+'-'+TODAY+'.csv';
   a.click();
   showToast('✓ Exportando historial...');
 }
@@ -2010,9 +2629,11 @@ function openModal() {
   var fd=document.getElementById('senebi-form-directo'); if(fd) fd.style.display='none';
   var rmt=document.getElementById('senebi-row-monto'); if(rmt) rmt.style.display='none';
   var stw=document.getElementById('senebi-tipo-wrap'); if(stw) stw.style.display='none';
-  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito','f-precio-ppt','f-monto-ppt','f-resultado-directo'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito','f-precio-ppt','f-monto-ppt','f-precio-ppt-mep','f-monto-ppt-mep','f-precio-ppt-cable','f-monto-ppt-cable','f-resultado-directo','f-inst-ticker','f-inst-nominales','f-inst-precio-mesa','f-inst-precio-cliente','f-inst-monto-mesa','f-inst-monto-cliente','f-inst-resultado'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+  var fi=document.getElementById('senebi-form-instrumento'); if(fi) fi.style.display='none';
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
-  const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación'};
+  resetPptFields();
+  const titles = {'fci-hoy':'Nueva Orden FCI','pagos-hoy':'Nueva Orden de Pago','conv-hoy':'Nueva Conversión','lic-hoy':'Nueva Licitación','ppt-hoy':'Nueva Operación PPT'};
   document.getElementById('modal-title').textContent = titles[currentView] || 'Nueva Orden';
   setModalFields(currentView);
   document.getElementById('modal').classList.add('open');
@@ -2022,7 +2643,7 @@ function closeModal() {
   document.getElementById('client-dd').classList.remove('open');
   window._editingId=null; window._editingFbKey=null;
   const btn=document.querySelector('.btn-submit'); if(btn) btn.textContent='Enviar Orden';
-  const titles = {'conv-hoy':'Nueva Conversión','pagos-hoy':'Nueva Orden de Pago','lic-hoy':'Nueva Licitación','senebi-hoy':'Nueva Operación SENEBI','fci-hoy':'Nueva Orden FCI'};
+  const titles = {'conv-hoy':'Nueva Conversión','pagos-hoy':'Nueva Orden de Pago','lic-hoy':'Nueva Licitación','senebi-hoy':'Nueva Operación SENEBI','fci-hoy':'Nueva Orden FCI','ppt-hoy':'Nueva Operación PPT'};
   document.getElementById('modal-title').textContent = titles[currentView]||'Nueva Orden';
 }
 
@@ -2210,6 +2831,22 @@ function submitOrder() {
     precioTasa:   tab==='lic' ? (document.getElementById('f-precio-tasa')?.value||'')  : '',
     cantidad:     tab==='lic' ? (document.getElementById('f-cantidad')?.value||'')     : '',
     monedaLic:    tab==='lic' ? (document.getElementById('f-moneda-lic')?.value||'')   : '',
+    // PPT
+    pptTipo:          tab==='ppt' ? (document.getElementById('f-ppt-tipo')?.value||'')          : '',
+    pptTicker:        tab==='ppt' ? (document.getElementById('f-ppt-ticker')?.value||'')        : '',
+    pptMoneda:        tab==='ppt' ? (document.getElementById('f-ppt-moneda')?.value||'')        : '',
+    pptTc:            tab==='ppt' ? (document.getElementById('f-ppt-tc')?.value||'')            : '',
+    pptModo:          tab==='ppt' ? currentPptModo                                              : '',
+    pptVn:            tab==='ppt' ? (document.getElementById('f-ppt-vn')?.value||'')            : '',
+    pptPrecio:        tab==='ppt' ? (document.getElementById('f-ppt-precio')?.value||'')        : '',
+    pptArancelTasa:   tab==='ppt' ? (document.getElementById('f-ppt-arancel')?.value||'')       : '',
+    pptBruto:         tab==='ppt' ? (document.getElementById('f-ppt-bruto')?.value||'')         : '',
+    pptArancelMonto:  tab==='ppt' ? (document.getElementById('f-ppt-arancel-monto')?.value||'') : '',
+    pptIvaArancel:    tab==='ppt' ? (document.getElementById('f-ppt-iva-arancel')?.value||'')   : '',
+    pptDdmm:          tab==='ppt' ? (document.getElementById('f-ppt-ddmm')?.value||'')          : '',
+    pptIvaDdmm:       tab==='ppt' ? (document.getElementById('f-ppt-iva-ddmm')?.value||'')      : '',
+    pptNetoUsd:       tab==='ppt' ? (document.getElementById('f-ppt-neto-usd')?.value||'')      : '',
+    pptNetoPesos:     tab==='ppt' ? (document.getElementById('f-ppt-neto-pesos')?.value||'')    : '',
     // SENEBI
     senebiTipo:      tab==='senebi' ? (currentSenebiTipo||'') : '',
     senebiOperacion: tab==='senebi' ? (document.getElementById('f-senebi-operacion')?.value||'') : '',
@@ -2235,18 +2872,39 @@ function submitOrder() {
     montoArs:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ars-dir')?.value||'') : '',
     montoUsd:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-usd-dir')?.value||'') : '',
     tcImplicito:  tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-tc-implicito')?.value||'') : '',
-    precioPpt:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ppt')?.value||'') : '',
-    montoPpt:     tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ppt')?.value||'') : '',
-    resultado:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-resultado-directo')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : ''),
+    precioPpt:      tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ppt')?.value||'')       : '',
+    montoPpt:       tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ppt')?.value||'')         : '',
+    precioPptMep:   tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ppt-mep')?.value||'')    : '',
+    montoPptMep:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ppt-mep')?.value||'')     : '',
+    precioPptCable: tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-precio-ppt-cable')?.value||'')  : '',
+    montoPptCable:  tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-monto-ppt-cable')?.value||'')   : '',
+    resultado:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-resultado-directo')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-resultado')?.value||'') : '')),
+    // Instrumento
+    instTicker:       tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-ticker')?.value||'')         : '',
+    instNominales:    tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-nominales')?.value||'')       : '',
+    instPrecioMesa:   tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-precio-mesa')?.value||'')    : '',
+    instPrecioCliente:tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-precio-cliente')?.value||'') : '',
+    instMontoMesa:    tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-monto-mesa')?.value||'')     : '',
+    instMontoCliente: tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-monto-cliente')?.value||'')  : '',
     monto:        tab==='senebi' ? (document.getElementById('f-senebi-monto')?.value||'') : '',
   };
 
+  if (tab==='ppt' && !document.getElementById('f-ppt-tipo').value) { showToast('⚠ Seleccioná el tipo de operación PPT'); return; }
+  if (tab==='ppt' && !document.getElementById('f-ppt-ticker').value.trim()) { showToast('⚠ Ingresá el ticker'); return; }
+  if (tab==='ppt' && !document.getElementById('f-ppt-moneda').value) { showToast('⚠ Seleccioná la moneda'); return; }
+  if (tab==='ppt' && (document.getElementById('f-ppt-moneda').value==='MEP'||document.getElementById('f-ppt-moneda').value==='CABLE') && !document.getElementById('f-ppt-tc').value) { showToast('⚠ Ingresá el tipo de cambio'); return; }
+  if (tab==='ppt' && !document.getElementById('f-ppt-precio').value) { showToast('⚠ Ingresá el precio'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
+  if (tab==='senebi' && currentSenebiTipo==='instrumento' && !document.getElementById('f-inst-ticker').value.trim()) { showToast('⚠ Ingresá el ticker del instrumento'); return; }
   if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && !selectedSenebiCompra) { showToast('⚠ Selecciona el comitente'); return; }
   if (tab==='senebi' && !document.getElementById('f-senebi-operacion').value) { showToast('⚠ Selecciona el tipo de operacion'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Selecciona Con Mesa o Directo'); return; }
+  if (tab==='senebi' && currentSenebiTipo==='directo') {
+    const pptCargados = [newOrder.precioPpt, newOrder.precioPptMep, newOrder.precioPptCable].filter(v => v && v.trim() !== '').length;
+    if (pptCargados > 1) { showToast('⚠ Solo podés cargar un Precio PPT (ARS, MEP o Cable)'); return; }
+  }
   if (tab==='conv'  && !newOrder.monedaConv) { showToast('⚠ Seleccioná la moneda de conversión'); return; }
 
   // Save to Firebase - editar o crear
@@ -2308,10 +2966,26 @@ function resetPassword(uid) {
   const inp = document.getElementById('pw-reset-'+uid);
   const newPw = inp.value.trim();
   if (!newPw || newPw.length < 3) { showToast('⚠ Ingresá una contraseña válida'); return; }
-  passwords[uid] = btoa(newPw);
+  const hashed = btoa(newPw);
+  passwords[uid] = hashed;
   firstLogin[uid] = true;
+  savePasswordToFirebase(uid, hashed, true);
   inp.value = '';
   showToast('✓ Contraseña reseteada para '+comerciales.find(c=>c.id===uid)?.name);
+}
+
+function resetAllPasswords() {
+  if (!confirm('¿Resetear TODAS las contraseñas? Cada usuario tendrá como contraseña provisional su nombre de usuario (ID).')) return;
+  let count = 0;
+  comerciales.forEach(function(c) {
+    const hashed = btoa(c.id);
+    passwords[c.id] = hashed;
+    firstLogin[c.id] = true;
+    savePasswordToFirebase(c.id, hashed, true);
+    count++;
+  });
+  renderComerciales();
+  showToast('✓ '+count+' contraseñas reseteadas. Contraseña provisoria = ID de cada usuario.');
 }
 
 function addComercial() {
