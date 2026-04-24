@@ -534,17 +534,24 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 
         <!-- STATS SENEBI -->
         <div class="stats-grid" id="senebi-stats-section" style="display:none">
-          <div class="stat-card"><div class="stat-icon c-total">📈</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="snb-st-total">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="snb-st-pend">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="snb-st-proc">0</div></div></div>
-          <div class="stat-card"><div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="snb-st-exec">0</div></div></div>
+          <div class="stat-card" id="snb-card-all" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('all',this)">
+            <div class="stat-icon c-total">📈</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="snb-st-total">0</div></div>
+          </div>
+          <div class="stat-card" id="snb-card-pend" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('PENDIENTE',this)">
+            <div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="snb-st-pend">0</div></div>
+          </div>
+          <div class="stat-card" id="snb-card-proc" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('EN PROCESO',this)">
+            <div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="snb-st-proc">0</div></div>
+          </div>
+          <div class="stat-card" id="snb-card-exec" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('EJECUTADO',this)">
+            <div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="snb-st-exec">0</div></div>
+          </div>
         </div>
 
         <!-- ORDERS VIEW -->
         <div id="orders-view">
           <!-- Filtro tipo operacion SENEBI -->
           <div class="filter-bar" id="senebi-op-filter" style="display:none;flex-wrap:wrap;gap:5px;margin-bottom:8px">
-            <button class="filter-chip active" data-snbop="all" onclick="setSenebiOpFilter('all',this)">Todas</button>
             <button class="filter-chip" data-snbop="compra-mep" onclick="setSenebiOpFilter('compra-mep',this)">Compra MEP</button>
             <button class="filter-chip" data-snbop="compra-cable" onclick="setSenebiOpFilter('compra-cable',this)">Compra Cable</button>
             <button class="filter-chip" data-snbop="venta-mep" onclick="setSenebiOpFilter('venta-mep',this)">Venta MEP</button>
@@ -554,13 +561,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <button class="filter-chip" data-snbop="compra-instrumento" onclick="setSenebiOpFilter('compra-instrumento',this)">Compra Instrumento</button>
             <button class="filter-chip" data-snbop="venta-instrumento" onclick="setSenebiOpFilter('venta-instrumento',this)">Venta Instrumento</button>
           </div>
-          <div class="filter-bar" id="filter-bar">
-            <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Todas</button>
-            <button class="filter-chip" data-filter="PENDIENTE" onclick="setFilter('PENDIENTE',this)">Pendiente</button>
-            <button class="filter-chip" data-filter="ENVIADO" onclick="setFilter('ENVIADO',this)">Enviado</button>
-            <button class="filter-chip" data-filter="EN PROCESO" onclick="setFilter('EN PROCESO',this)">En Proceso</button>
-            <button class="filter-chip" data-filter="EJECUTADO" onclick="setFilter('EJECUTADO',this)">Ejecutado</button>
-          </div>
+          <div class="filter-bar" id="filter-bar" style="display:none"></div>
           <div class="table-wrap" id="main-table-wrap"><div class="table-scroll">
             <table><thead><tr id="table-head"></tr></thead><tbody id="table-body"></tbody></table>
           </div></div>
@@ -616,6 +617,18 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </select>
             <button class="filter-chip active" onclick="renderHistorial()">Buscar</button>
             <button class="xlsx-btn" onclick="exportHistorialXLSX()">⬇ Excel</button>
+          </div>
+
+          <!-- Subfiltro tipo operacion SENEBI (solo visible cuando tipo=SENEBI) -->
+          <div id="hist-senebi-op-filter" style="display:none;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+            <button class="filter-chip" data-histsnbop="compra-mep" onclick="setHistSenebiOp('compra-mep',this)">Compra MEP</button>
+            <button class="filter-chip" data-histsnbop="compra-cable" onclick="setHistSenebiOp('compra-cable',this)">Compra Cable</button>
+            <button class="filter-chip" data-histsnbop="venta-mep" onclick="setHistSenebiOp('venta-mep',this)">Venta MEP</button>
+            <button class="filter-chip" data-histsnbop="venta-cable" onclick="setHistSenebiOp('venta-cable',this)">Venta Cable</button>
+            <button class="filter-chip" data-histsnbop="canje-mep-cable" onclick="setHistSenebiOp('canje-mep-cable',this)">Canje MEP&gt;Cable</button>
+            <button class="filter-chip" data-histsnbop="canje-cable-mep" onclick="setHistSenebiOp('canje-cable-mep',this)">Canje Cable&gt;MEP</button>
+            <button class="filter-chip" data-histsnbop="compra-instrumento" onclick="setHistSenebiOp('compra-instrumento',this)">Compra Instrumento</button>
+            <button class="filter-chip" data-histsnbop="venta-instrumento" onclick="setHistSenebiOp('venta-instrumento',this)">Venta Instrumento</button>
           </div>
 
           <!-- Tabla (vacía hasta que se elige módulo) -->
@@ -1081,7 +1094,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
               <input class="form-input" id="f-inst-ticker" placeholder="Ej: AL30, AL30D, AL30C" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
             </div>
             <div class="form-group">
-              <label class="form-label">VN / Nominales *</label>
+              <label class="form-label">VN *</label>
               <input class="form-input importe-field" id="f-inst-nominales" placeholder="0,00" oninput="fmtSenebi(this);calcInstrumento()">
             </div>
           </div>
@@ -1165,7 +1178,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <div style="display:flex;gap:8px;margin-top:2px">
               <button type="button" id="ppt-btn-vn" onclick="setPptModo('vn')"
                 style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--teal);background:var(--teal);color:#fff;font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer">
-                VN / Nominales
+                VN
               </button>
               <button type="button" id="ppt-btn-monto" onclick="setPptModo('monto')"
                 style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted);font-family:Nunito,sans-serif;font-size:12px;font-weight:700;cursor:pointer">
@@ -1174,8 +1187,15 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label" id="lbl-ppt-vn-monto">VN / Nominales *</label>
+            <label class="form-label" id="lbl-ppt-vn-monto">VN *</label>
             <input class="form-input importe-field" id="f-ppt-vn" placeholder="0,00" oninput="fmtSenebi(this);calcPPT()">
+          </div>
+        </div>
+        <!-- VN calculado (solo visible en modo monto) -->
+        <div class="form-row full" id="ppt-vn-calc-row" style="display:none">
+          <div class="form-group">
+            <label class="form-label">VN calculado <span style="font-size:9px;color:var(--text-muted)">(Monto x 100 / Precio)</span></label>
+            <input class="form-input" id="f-ppt-vn-calc" readonly style="background:#F4F6FB;color:var(--navy);font-weight:700;cursor:default">
           </div>
         </div>
         <!-- Fila 4: Precio + Arancel -->
@@ -1376,56 +1396,66 @@ function setPptModo(modo) {
   const inp      = document.getElementById('f-ppt-vn');
   const act = 'border:1.5px solid var(--teal);background:var(--teal);color:#fff';
   const inact = 'border:1.5px solid var(--border);background:var(--surface2);color:var(--text-muted)';
+  const rowVnCalc = document.getElementById('ppt-vn-calc-row');
   if (modo === 'vn') {
     btnVN.style.cssText    += ';' + act;
     btnMonto.style.cssText += ';' + inact;
-    if (lbl) lbl.textContent = 'VN / Nominales *';
+    if (lbl) lbl.textContent = 'VN *';
     if (inp) { inp.value = ''; inp.placeholder = '0,00'; }
+    if (rowVnCalc) rowVnCalc.style.display = 'none';
   } else {
     btnMonto.style.cssText += ';' + act;
     btnVN.style.cssText    += ';' + inact;
     if (lbl) lbl.textContent = 'Monto *';
     if (inp) { inp.value = ''; inp.placeholder = '0,00'; }
+    if (rowVnCalc) rowVnCalc.style.display = '';
   }
   calcPPT();
 }
 
 function calcPPT() {
-  const parse = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
-  const fmt2  = v => v !== 0 ? Math.abs(v).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  // parse para campos de usuario (separador de miles = punto, decimal = coma)
+  const parseUser = id => parseFloat((document.getElementById(id)?.value||'').replace(/\./g,'').replace(',','.')) || 0;
+  // parse directo para valores del sistema (como el select de arancel que ya tiene punto decimal)
+  const parseSys  = id => parseFloat(document.getElementById(id)?.value||'0') || 0;
+  const fmt2  = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  const fmt7  = v => v > 0 ? v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:7}) : '';
   const set   = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
 
-  const moneda   = document.getElementById('f-ppt-moneda')?.value || 'ARS';
-  const arancel  = parse('f-ppt-arancel');  // 0.005 o 0.003
-  const precio   = parse('f-ppt-precio');
-  const tc       = parse('f-ppt-tc');
-  const esUSD    = moneda === 'MEP' || moneda === 'CABLE';
+  const moneda      = document.getElementById('f-ppt-moneda')?.value || 'ARS';
+  const arancelTasa = parseSys('f-ppt-arancel');  // 0.005 o 0.003 — NO usar parseUser
+  const precio      = parseUser('f-ppt-precio');
+  const tc          = parseUser('f-ppt-tc');
+  const esUSD       = moneda === 'MEP' || moneda === 'CABLE';
 
-  // Calcular VN o Monto según modo
+  // Calcular VN o Bruto según modo
   let vn = 0, bruto = 0;
   if (currentPptModo === 'vn') {
-    vn    = parse('f-ppt-vn');
+    vn    = parseUser('f-ppt-vn');
     bruto = precio > 0 ? vn * precio / 100 : 0;
   } else {
-    const monto = parse('f-ppt-vn'); // mismo campo
+    const monto = parseUser('f-ppt-vn'); // mismo campo, reutilizado
     bruto = monto;
     vn    = precio > 0 ? monto * 100 / precio : 0;
+    // Mostrar VN calculado
+    const elVn = document.getElementById('f-ppt-vn-calc');
+    if (elVn) elVn.value = vn > 0 ? fmt7(vn) : '';
   }
 
-  // Arancel
-  const arancelMonto = bruto * arancel;
+  // Arancel en la moneda del bruto
+  const arancelMonto = bruto * arancelTasa;
 
-  // TC para convertir a pesos
-  const tcPesos = esUSD ? tc : 1;
+  // TC para convertir USD a pesos (si es ARS, tc=1)
+  const tcPesos = esUSD && tc > 0 ? tc : 1;
 
-  // IVA Arancel (en pesos)
+  // IVA Arancel en pesos = Arancel * TC * 21%
   const ivaArancel = arancelMonto * tcPesos * 0.21;
 
-  // DDMM (en pesos) = Bruto * TC * 0.0009688
+  // DDMM en pesos = Bruto * TC * 0.09688%
   const ddmm    = bruto * tcPesos * 0.0009688;
   const ivaDdmm = ddmm * 0.21;
 
-  // Neto USD (solo si es MEP/Cable)
+  // Neto USD = Bruto - Arancel (solo si MEP/Cable)
   const netoUSD = esUSD ? bruto - arancelMonto : 0;
 
   // Neto $ = IVA Arancel + DDMM + IVA DDMM
@@ -1435,16 +1465,16 @@ function calcPPT() {
   const monedaTag = esUSD ? moneda : 'ARS';
   const elBrutoLbl = document.getElementById('lbl-ppt-moneda-bruto');
   const elArancLbl = document.getElementById('lbl-ppt-moneda-arancel');
-  if (elBrutoLbl)  elBrutoLbl.textContent  = '(' + monedaTag + ')';
-  if (elArancLbl)  elArancLbl.textContent  = '(' + monedaTag + ')';
+  if (elBrutoLbl) elBrutoLbl.textContent = '(' + monedaTag + ')';
+  if (elArancLbl) elArancLbl.textContent = '(' + monedaTag + ')';
 
-  set('f-ppt-bruto',        bruto > 0 ? fmt2(bruto) : '');
-  set('f-ppt-arancel-monto',arancelMonto > 0 ? fmt2(arancelMonto) : '');
-  set('f-ppt-iva-arancel',  ivaArancel > 0 ? fmt2(ivaArancel) : '');
-  set('f-ppt-ddmm',         ddmm > 0 ? fmt2(ddmm) : '');
-  set('f-ppt-iva-ddmm',     ivaDdmm > 0 ? fmt2(ivaDdmm) : '');
-  set('f-ppt-neto-usd',     esUSD && netoUSD > 0 ? fmt2(netoUSD) : '');
-  set('f-ppt-neto-pesos',   netoPesos > 0 ? fmt2(netoPesos) : '');
+  set('f-ppt-bruto',         bruto > 0        ? fmt2(bruto)         : '');
+  set('f-ppt-arancel-monto', arancelMonto > 0 ? fmt2(arancelMonto)  : '');
+  set('f-ppt-iva-arancel',   ivaArancel > 0   ? fmt2(ivaArancel)    : '');
+  set('f-ppt-ddmm',          ddmm > 0         ? fmt2(ddmm)          : '');
+  set('f-ppt-iva-ddmm',      ivaDdmm > 0      ? fmt2(ivaDdmm)       : '');
+  set('f-ppt-neto-usd',      esUSD && netoUSD > 0 ? fmt2(netoUSD)   : '');
+  set('f-ppt-neto-pesos',    netoPesos > 0    ? fmt2(netoPesos)      : '');
 }
 
 function resetPptFields() {
@@ -1463,7 +1493,7 @@ function resetPptFields() {
   const btnM  = document.getElementById('ppt-btn-monto');
   if(btnVN){ btnVN.style.background='var(--teal)'; btnVN.style.color='#fff'; btnVN.style.borderColor='var(--teal)'; }
   if(btnM) { btnM.style.background='var(--surface2)'; btnM.style.color='var(--text-muted)'; btnM.style.borderColor='var(--border)'; }
-  const lbl = document.getElementById('lbl-ppt-vn-monto'); if(lbl) lbl.textContent='VN / Nominales *';
+  const lbl = document.getElementById('lbl-ppt-vn-monto'); if(lbl) lbl.textContent='VN *';
 }
 
 // ═══════════════════════════════════════════════════
@@ -1637,6 +1667,9 @@ function showView(view) {
   const isHist  = view === 'historial';
   document.getElementById('orders-view').style.display   = (!isAdmin && !isHist) ? 'block' : 'none';
   document.getElementById('historial-view').style.display = isHist  ? 'block' : 'none';
+  // Stats generales: solo en vistas de órdenes del día, nunca en historial ni admin
+  const statsSection = document.getElementById('stats-section');
+  if (statsSection) statsSection.style.display = (!isAdmin && !isHist && (currentUser.isAdmin || isSuperComercial())) ? 'grid' : 'none';
   document.getElementById('admin-panel').style.display    = isAdmin ? 'block' : 'none';
   document.getElementById('new-order-btn').style.display  = (!isAdmin && !isHist) ? 'inline-block' : 'none';
   document.getElementById('count-tag').style.display      = (!isAdmin && !isHist) ? 'inline-block' : 'none';
@@ -1656,7 +1689,13 @@ function showView(view) {
   if (snbOpFilter) snbOpFilter.style.display = isSenebi ? 'flex' : 'none';
   if (isSenebi) {
     currentSenebiOpFilter = 'all';
-    document.querySelectorAll('#senebi-op-filter .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.snbop==='all'));
+    currentSenebiEstadoFilter = 'all';
+    document.querySelectorAll('#senebi-op-filter .filter-chip').forEach(c => c.classList.remove('active'));
+    ['snb-card-all','snb-card-pend','snb-card-proc','snb-card-exec'].forEach(id => {
+      const c = document.getElementById(id); if(c) c.style.outline='';
+    });
+    const cardAll = document.getElementById('snb-card-all');
+    if (cardAll) cardAll.style.outline = '2px solid var(--teal)';
     updateSenebiStats();
   }
 
@@ -1776,10 +1815,12 @@ function getTodayOrders() {
       rows = rows.filter(o => o.solicitadoPor === currentUser.id);
     }
   }
-  if (currentFilter !== 'all') rows = rows.filter(o => o.estado === currentFilter);
-  // Filtro tipo operacion SENEBI
-  if (tab === 'senebi' && currentSenebiOpFilter !== 'all') {
-    rows = rows.filter(o => o.senebiOperacion === currentSenebiOpFilter);
+  // Para SENEBI usar filtros propios, para el resto usar currentFilter
+  if (tab === 'senebi') {
+    if (currentSenebiEstadoFilter !== 'all') rows = rows.filter(o => o.estado === currentSenebiEstadoFilter);
+    if (currentSenebiOpFilter !== 'all') rows = rows.filter(o => o.senebiOperacion === currentSenebiOpFilter);
+  } else {
+    if (currentFilter !== 'all') rows = rows.filter(o => o.estado === currentFilter);
   }
   return rows;
 }
@@ -1815,6 +1856,19 @@ function toggleLiquidez(inputId, btnId) {
 // ─── SENEBI ─────────────────────────────────────────
 let currentSenebiTipo = null;
 let currentSenebiOpFilter = 'all'; // filtro tipo operacion en vista diaria
+
+let currentSenebiEstadoFilter = 'all';
+
+function setSenebiEstadoFilter(estado, el) {
+  currentSenebiEstadoFilter = estado;
+  // Resaltar card activa
+  ['snb-card-all','snb-card-pend','snb-card-proc','snb-card-exec'].forEach(id => {
+    const c = document.getElementById(id);
+    if (c) c.style.outline = '';
+  });
+  if (el) el.style.outline = '2px solid var(--teal)';
+  renderTable();
+}
 
 function setSenebiOpFilter(op, el) {
   currentSenebiOpFilter = op;
@@ -2519,9 +2573,20 @@ function updateHistStats() {
   }
 }
 
+let currentHistSenebiOp = 'all';
+
+function setHistSenebiOp(op, el) {
+  currentHistSenebiOp = op;
+  document.querySelectorAll('#hist-senebi-op-filter .filter-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderHistorial();
+}
+
 function setHistTipo(tipo) {
   const sel = document.getElementById('hist-tipo');
   if (sel) sel.value = tipo;
+  currentHistSenebiOp = 'all';
+  document.querySelectorAll('#hist-senebi-op-filter .filter-chip').forEach(c => c.classList.remove('active'));
   renderHistorial();
 }
 
@@ -2542,6 +2607,11 @@ function renderHistorial() {
 
   // Actualizar stats siempre
   updateHistStats();
+
+  // Mostrar/ocultar subfiltro SENEBI
+  const snbOpFilt = document.getElementById('hist-senebi-op-filter');
+  if (snbOpFilt) snbOpFilt.style.display = (tipo === 'senebi') ? 'flex' : 'none';
+  if (tipo !== 'senebi') { currentHistSenebiOp = 'all'; }
 
   // Si no hay tipo seleccionado, mostrar mensaje y ocultar tabla
   const tableWrap = document.getElementById('hist-table-wrap');
@@ -2573,6 +2643,10 @@ function renderHistorial() {
     if (tipo==='ppt') return o.tab==='ppt';
     return true;
   });
+  // Subfiltro tipo operacion SENEBI
+  if (tipo === 'senebi' && currentHistSenebiOp !== 'all') {
+    rows = rows.filter(o => o.senebiOperacion === currentHistSenebiOp);
+  }
   if (estado)   rows = rows.filter(o => o.estado === estado);
   if (comercial)rows = rows.filter(o => o.solicitadoPor === comercial);
 
@@ -2672,7 +2746,15 @@ function renderHistorial() {
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.denominacion||'',o.precioTasa||'',o.cantidad||'',o.monedaLic||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
 
   } else if (tipo === 'senebi') {
-    cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P. ARS','P. USD','P. PPT','TC/Impl.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado'];
+    const histSnbOp = currentHistSenebiOp;
+    const isInstHist = histSnbOp==='compra-instrumento'||histSnbOp==='venta-instrumento';
+    if (isInstHist) {
+      cols = ['ID','Fecha','Comitente','Nombre','Operación','Ticker','Nominales','P. Mesa Comercial','P. Cliente','Monto Mesa','Monto Cliente','Resultado','Estado'];
+    } else if (histSnbOp !== 'all') {
+      cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P. ARS','P. USD','P. PPT','TC/Impl.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado'];
+    } else {
+      cols = ['ID','Fecha','Comitente','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P. ARS','P. USD','P. PPT','TC/Impl.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado'];
+    }
     if (showComercial) cols.push('Comercial');
     const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
     buildRow = o => {
@@ -2683,11 +2765,30 @@ function renderHistorial() {
       const tcShow = o.senebiTipo==='mesa'?(o.tcCliente||'—'):o.senebiTipo==='instrumento'?(o.instPrecioMesa||'—'):(o.tcImplicito||'—');
       const montoArs = o.senebiTipo==='mesa'?(o.arsCliente||'—'):o.senebiTipo==='instrumento'?(o.instMontoMesa||'—'):(o.montoArs||'—');
       const montoUsd = o.senebiTipo==='mesa'?(o.montoSenebi||'—'):o.senebiTipo==='instrumento'?(o.instMontoCliente||'—'):(o.montoUsd||'—');
+
+      if (isInstHist) {
+        return `<tr>
+          <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+          <td class="id-mono">${o.fecha}</td>
+          <td class="id-mono">${o.comitenteCompra||'—'}</td>
+          <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.nombreCompra||'—'}</td>
+          <td style="font-size:11px;font-weight:700;color:var(--navy)">${opLabel}</td>
+          <td class="id-mono" style="font-weight:700">${o.instTicker||'—'}</td>
+          <td class="id-mono">${o.instNominales||'—'}</td>
+          <td class="id-mono">${o.instPrecioMesa||'—'}</td>
+          <td class="id-mono">${o.instPrecioCliente||'—'}</td>
+          <td class="id-mono" style="font-weight:700">${o.instMontoMesa||'—'}</td>
+          <td class="id-mono" style="font-weight:700">${o.instMontoCliente||'—'}</td>
+          <td class="id-mono" style="color:var(--teal-dark);font-weight:800">${o.resultado||'—'}</td>
+          <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
+          ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        </tr>`;
+      }
       return `<tr>
         <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
         <td class="id-mono">${o.fecha}</td>
         <td class="id-mono">${o.comitenteCompra||'—'}</td>
-        <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.nombreCompra||''}">${o.nombreCompra||'—'}</td>
+        ${histSnbOp!=='all'?`<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.nombreCompra||'—'}</td>`:''}
         <td style="font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap">${opLabel}</td>
         <td><span class="tipo-badge" style="font-size:10px">${metodo}</span></td>
         <td>${o.plazo||'—'}</td>
@@ -2696,7 +2797,7 @@ function renderHistorial() {
         <td class="id-mono">${o.nominales||'—'}</td>
         <td class="id-mono" style="font-size:11px">${o.precioArs||'—'}</td>
         <td class="id-mono" style="font-size:11px">${o.precioUsd||'—'}</td>
-        <td class="id-mono" style="font-size:11px">${o.precioPpt||'—'}</td>
+        <td class="id-mono" style="font-size:11px">${o.precioPpt||o.precioPptMep||o.precioPptCable||'—'}</td>
         <td class="id-mono" style="color:var(--teal-dark);font-weight:700">${tcShow}</td>
         <td class="id-mono" style="font-weight:700">${montoArs}</td>
         <td class="id-mono" style="font-weight:700">${montoUsd}</td>
@@ -2712,7 +2813,8 @@ function renderHistorial() {
       const tcShow = o.senebiTipo==='mesa'?(o.tcCliente||''):o.senebiTipo==='instrumento'?(o.instPrecioMesa||''):(o.tcImplicito||'');
       const montoArs = o.senebiTipo==='mesa'?(o.arsCliente||''):o.senebiTipo==='instrumento'?(o.instMontoMesa||''):(o.montoArs||'');
       const montoUsd = o.senebiTipo==='mesa'?(o.montoSenebi||''):o.senebiTipo==='instrumento'?(o.instMontoCliente||''):(o.montoUsd||'');
-      return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||'',o.tickerArs||'',o.tickerUsd||'',o.nominales||'',o.precioArs||'',o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+      if (isInstHist) return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,o.instTicker||'',o.instNominales||'',o.instPrecioMesa||'',o.instPrecioCliente||'',o.instMontoMesa||'',o.instMontoCliente||'',o.resultado||'',o.estado,...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+      return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||'',o.tickerArs||'',o.tickerUsd||'',o.nominales||'',o.precioArs||'',o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado,...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
     };
 
   } else if (tipo === 'ppt') {
