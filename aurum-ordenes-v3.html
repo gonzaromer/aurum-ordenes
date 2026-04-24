@@ -603,7 +603,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <input class="filter-input" type="date" id="hist-from" style="width:140px" onchange="updateHistStats()">
             <span style="color:var(--text-muted);font-size:12px">al</span>
             <input class="filter-input" type="date" id="hist-to" style="width:140px" onchange="updateHistStats()">
-            <select class="filter-select" id="hist-tipo" style="width:140px" onchange="if(this.value) renderHistorial()">
+            <select class="filter-select" id="hist-tipo" style="width:140px" onchange="onHistTipoChange()">
               <option value="">— Seleccioná módulo —</option>
               <option>FCI</option><option>PAGOS</option><option>CONVERSIONES</option><option>LICITACIONES</option><option>SENEBI</option><option>PPT</option>
             </select>
@@ -1685,8 +1685,11 @@ function showView(view) {
   const isSenebi = view === 'senebi-hoy';
   const snbStats = document.getElementById('senebi-stats-section');
   const snbOpFilter = document.getElementById('senebi-op-filter');
+  const filterBar = document.getElementById('filter-bar');
   if (snbStats) snbStats.style.display = isSenebi ? 'grid' : 'none';
   if (snbOpFilter) snbOpFilter.style.display = isSenebi ? 'flex' : 'none';
+  // Ocultar chips de estado para SENEBI, mostrar para el resto
+  if (filterBar) filterBar.style.display = isSenebi ? 'none' : 'flex';
   if (isSenebi) {
     currentSenebiOpFilter = 'all';
     currentSenebiEstadoFilter = 'all';
@@ -2580,6 +2583,14 @@ function setHistSenebiOp(op, el) {
   document.querySelectorAll('#hist-senebi-op-filter .filter-chip').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
   renderHistorial();
+}
+
+function onHistTipoChange() {
+  const tipo = document.getElementById('hist-tipo').value.toLowerCase();
+  const snbOpFilt = document.getElementById('hist-senebi-op-filter');
+  if (snbOpFilt) snbOpFilt.style.display = (tipo === 'senebi') ? 'flex' : 'none';
+  if (tipo !== 'senebi') currentHistSenebiOp = 'all';
+  if (tipo) renderHistorial();
 }
 
 function setHistTipo(tipo) {
