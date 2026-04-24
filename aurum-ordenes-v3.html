@@ -570,31 +570,39 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <!-- HISTORIAL VIEW -->
         <div id="historial-view" style="display:none">
 
-          <!-- Stats por módulo -->
-          <div id="hist-stats-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('FCI')">
-              <div class="stat-icon" style="background:rgba(45,125,210,0.10);font-size:16px">📊</div>
-              <div><div class="stat-label">FCI</div><div class="stat-value" id="hst-fci" style="font-size:22px;color:var(--navy)">0</div></div>
+          <!-- Stats historial -->
+          <div style="margin-bottom:16px">
+            <!-- Total General -->
+            <div class="stat-card" style="margin-bottom:10px;max-width:260px">
+              <div class="stat-icon c-total">📋</div>
+              <div><div class="stat-label">Total General</div><div class="stat-value sv-total" id="hst-total" style="color:var(--navy)">0</div></div>
             </div>
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('PAGOS')">
-              <div class="stat-icon" style="background:rgba(39,174,122,0.10);font-size:16px">💸</div>
-              <div><div class="stat-label">Pagos</div><div class="stat-value" id="hst-pagos" style="font-size:22px;color:var(--green)">0</div></div>
-            </div>
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('CONVERSIONES')">
-              <div class="stat-icon" style="background:rgba(155,76,226,0.10);font-size:16px">🔄</div>
-              <div><div class="stat-label">Conversiones</div><div class="stat-value" id="hst-conv" style="font-size:22px;color:#7B35C4">0</div></div>
-            </div>
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('LICITACIONES')">
-              <div class="stat-icon" style="background:rgba(230,90,30,0.10);font-size:16px">🏦</div>
-              <div><div class="stat-label">Licitaciones</div><div class="stat-value" id="hst-lic" style="font-size:22px;color:#C45A10">0</div></div>
-            </div>
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('SENEBI')">
-              <div class="stat-icon" style="background:rgba(30,150,100,0.10);font-size:16px">📈</div>
-              <div><div class="stat-label">SENEBI</div><div class="stat-value" id="hst-senebi" style="font-size:22px;color:#1A7A55">0</div></div>
-            </div>
-            <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('PPT')">
-              <div class="stat-icon" style="background:rgba(230,100,50,0.10);font-size:16px">🧮</div>
-              <div><div class="stat-label">PPT</div><div class="stat-value" id="hst-ppt" style="font-size:22px;color:#B84010">0</div></div>
+            <!-- Por módulo -->
+            <div id="hist-stats-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('FCI')">
+                <div class="stat-icon" style="background:rgba(45,125,210,0.10);font-size:16px">📊</div>
+                <div><div class="stat-label">FCI</div><div class="stat-value" id="hst-fci" style="font-size:22px;color:var(--navy)">0</div></div>
+              </div>
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('PAGOS')">
+                <div class="stat-icon" style="background:rgba(39,174,122,0.10);font-size:16px">💸</div>
+                <div><div class="stat-label">Pagos</div><div class="stat-value" id="hst-pagos" style="font-size:22px;color:var(--green)">0</div></div>
+              </div>
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('CONVERSIONES')">
+                <div class="stat-icon" style="background:rgba(155,76,226,0.10);font-size:16px">🔄</div>
+                <div><div class="stat-label">Conversiones</div><div class="stat-value" id="hst-conv" style="font-size:22px;color:#7B35C4">0</div></div>
+              </div>
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('LICITACIONES')">
+                <div class="stat-icon" style="background:rgba(230,90,30,0.10);font-size:16px">🏦</div>
+                <div><div class="stat-label">Licitaciones</div><div class="stat-value" id="hst-lic" style="font-size:22px;color:#C45A10">0</div></div>
+              </div>
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('SENEBI')">
+                <div class="stat-icon" style="background:rgba(30,150,100,0.10);font-size:16px">📈</div>
+                <div><div class="stat-label">SENEBI</div><div class="stat-value" id="hst-senebi" style="font-size:22px;color:#1A7A55">0</div></div>
+              </div>
+              <div class="stat-card" style="cursor:pointer" onclick="setHistTipo('PPT')">
+                <div class="stat-icon" style="background:rgba(230,100,50,0.10);font-size:16px">🧮</div>
+                <div><div class="stat-label">PPT</div><div class="stat-value" id="hst-ppt" style="font-size:22px;color:#B84010">0</div></div>
+              </div>
             </div>
           </div>
 
@@ -2560,6 +2568,7 @@ function updateHistStats() {
   const rows = getHistBaseRows();
   const count = tab => rows.filter(o => o.tab === tab).length;
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('hst-total', rows.length);
   set('hst-fci',   count('fci'));
   set('hst-pagos', count('pagos'));
   set('hst-conv',  count('conv'));
