@@ -1437,16 +1437,17 @@ function calcPPT() {
 
   // Calcular VN o Bruto según modo
   let vn = 0, bruto = 0;
+  const fmtVN = v => v > 0 ? Math.round(v).toLocaleString('es-AR') : '';
   if (currentPptModo === 'vn') {
-    vn    = parseUser('f-ppt-vn');
-    bruto = precio > 0 ? vn * precio / 100 : 0;
+    vn    = Math.round(parseUser('f-ppt-vn')); // VN siempre entero
+    bruto = precio > 0 ? vn * precio : 0;      // Bruto = VN x Precio (sin /100)
   } else {
-    const monto = parseUser('f-ppt-vn'); // mismo campo, reutilizado
+    const monto = parseUser('f-ppt-vn');
     bruto = monto;
-    vn    = precio > 0 ? monto * 100 / precio : 0;
+    vn    = precio > 0 ? Math.round(monto / precio) : 0; // VN = Monto / Precio, entero
     // Mostrar VN calculado
     const elVn = document.getElementById('f-ppt-vn-calc');
-    if (elVn) elVn.value = vn > 0 ? fmt7(vn) : '';
+    if (elVn) elVn.value = vn > 0 ? fmtVN(vn) : '';
   }
 
   // Arancel en la moneda del bruto
@@ -1673,9 +1674,16 @@ function showView(view) {
   const isHist  = view === 'historial';
   document.getElementById('orders-view').style.display   = (!isAdmin && !isHist) ? 'block' : 'none';
   document.getElementById('historial-view').style.display = isHist  ? 'block' : 'none';
-  // Stats generales: para todos los usuarios, en todos los módulos del día excepto SENEBI
+  // Stats generales: para todos los usuarios, en todos los módulos del día excepto SENEBI y acumulado
   const statsSection = document.getElementById('stats-section');
-  if (statsSection) statsSection.style.display = (!isAdmin && !isHist && view !== 'senebi-hoy') ? 'grid' : 'none';
+  if (statsSection) {
+    if (isHist || isAdmin || view === 'senebi-hoy') {
+      statsSection.style.display = 'none';
+    } else {
+      statsSection.style.display = 'grid';
+      updateModuleStats(view);
+    }
+  }
   document.getElementById('admin-panel').style.display    = isAdmin ? 'block' : 'none';
   document.getElementById('new-order-btn').style.display  = (!isAdmin && !isHist) ? 'inline-block' : 'none';
   document.getElementById('count-tag').style.display      = (!isAdmin && !isHist) ? 'inline-block' : 'none';
@@ -2643,12 +2651,17 @@ function renderHistorial() {
   if (snbOpFilt) snbOpFilt.style.display = (tipo === 'senebi') ? 'flex' : 'none';
   if (tipo !== 'senebi') { currentHistSenebiOp = 'all'; }
 
-  // Si no hay tipo seleccionado, mostrar mensaje y ocultar tabla
+  // Si no hay tipo seleccionado, o es SENEBI sin subfiltro elegido → tabla vacía
   const tableWrap = document.getElementById('hist-table-wrap');
   const emptyMsg  = document.getElementById('hist-empty-msg');
-  if (!tipo) {
+  if (!tipo || (tipo === 'senebi' && currentHistSenebiOp === 'all')) {
     if (tableWrap) tableWrap.style.display = 'none';
-    if (emptyMsg)  emptyMsg.style.display  = 'block';
+    if (emptyMsg) {
+      emptyMsg.style.display = 'block';
+      emptyMsg.querySelector('div:last-child').textContent = tipo === 'senebi'
+        ? 'Seleccioná un tipo de operación SENEBI para ver las órdenes'
+        : 'Seleccioná un módulo para ver las órdenes';
+    }
     return;
   }
   if (tableWrap) tableWrap.style.display = 'block';
