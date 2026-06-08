@@ -1101,6 +1101,16 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
               <input class="form-input" id="f-inst-ticker" placeholder="Ej: AL30, AL30D, AL30C" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
             </div>
             <div class="form-group">
+              <label class="form-label">Plazo *</label>
+              <select class="form-select" id="f-inst-plazo">
+                <option value="">--</option>
+                <option value="CI">CI</option>
+                <option value="24HS">24HS</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label class="form-label">VN *</label>
               <input class="form-input importe-field" id="f-inst-nominales" placeholder="0,00" oninput="fmtSenebi(this);calcInstrumento()">
             </div>
@@ -2362,6 +2372,7 @@ function editOrder(id) {
         } else if (o.senebiTipo==='instrumento') {
           var el;
           el=document.getElementById('f-inst-ticker');        if(el) el.value=o.instTicker||'';
+          el=document.getElementById('f-inst-plazo');         if(el) el.value=o.instPlazo||'';
           el=document.getElementById('f-inst-nominales');     if(el) el.value=o.instNominales||'';
           el=document.getElementById('f-inst-precio-mesa');   if(el) el.value=o.instPrecioMesa||'';
           el=document.getElementById('f-inst-precio-cliente');if(el) el.value=o.instPrecioCliente||'';
@@ -2427,7 +2438,7 @@ function renderTable() {
     const isInst = snbOp === 'compra-instrumento' || snbOp === 'venta-instrumento';
     const isMesa = snbOp !== 'all' && !isInst; // compra/venta/canje MEP o CABLE -> puede ser mesa o directo
     if (isInst) {
-      cols.push('Comitente','Nombre','Operación','Ticker','Nominales','P. Mesa Comercial','P. Cliente','Monto Mesa','Monto Cliente','Resultado');
+      cols.push('Comitente','Nombre','Operación','Ticker','Plazo','Nominales','P. Mesa Comercial','P. Cliente','Monto Mesa','Monto Cliente','Resultado');
     } else if (snbOp === 'all') {
       cols.push('Comitente','Operacion','Metodo','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','P.PPT','TC / TC Imp.','Monto ARS','Monto USD','Monto PPT','Resultado');
     } else {
@@ -2480,7 +2491,7 @@ function renderTable() {
       const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
       const opLabel  = opLabels[o.senebiOperacion] || o.senebiOperacion || '—';
       const metodo   = o.senebiTipo==='mesa' ? 'Con Mesa' : o.senebiTipo==='directo' ? 'Directo' : o.senebiTipo==='instrumento' ? 'Instrumento' : '—';
-      const plazo    = o.plazo||'—';
+      const plazo    = o.senebiTipo==='instrumento' ? (o.instPlazo||'—') : (o.plazo||'—');
       const comitente= o.comitenteCompra ? `${o.comitenteCompra}<br><small style="color:var(--text-muted)">${(o.nombreCompra||'').slice(0,14)}</small>` : '—';
       const tcShow   = o.senebiTipo==='mesa' ? (o.tcCliente||'—') : o.senebiTipo==='instrumento' ? (o.instPrecioMesa||'—') : (o.tcImplicito||'—');
       const montoArs = o.senebiTipo==='mesa' ? (o.arsCliente||'—') : o.senebiTipo==='instrumento' ? (o.instMontoMesa||'—') : (o.montoArs||'—');
@@ -2500,6 +2511,7 @@ function renderTable() {
           + `<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.nombreCompra||''}">${(o.nombreCompra||'—')}</td>`
           + `<td style="font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap">${opLabel}</td>`
           + `<td class="id-mono" style="font-weight:700">${o.instTicker||'—'}</td>`
+          + `<td>${o.instPlazo||'—'}</td>`
           + `<td class="id-mono">${o.instNominales||'—'}</td>`
           + `<td class="id-mono" style="font-size:11px">${o.instPrecioMesa||'—'}</td>`
           + `<td class="id-mono" style="font-size:11px">${o.instPrecioCliente||'—'}</td>`
@@ -2819,7 +2831,7 @@ function renderHistorial() {
     const histSnbOp = currentHistSenebiOp;
     const isInstHist = histSnbOp==='compra-instrumento'||histSnbOp==='venta-instrumento';
     if (isInstHist) {
-      cols = ['ID','Fecha','Comitente','Nombre','Operación','Ticker','Nominales','P. Mesa Comercial','P. Cliente','Monto Mesa','Monto Cliente','Resultado','Estado'];
+      cols = ['ID','Fecha','Comitente','Nombre','Operación','Ticker','Plazo','Nominales','P. Mesa Comercial','P. Cliente','Monto Mesa','Monto Cliente','Resultado','Estado'];
     } else if (histSnbOp !== 'all') {
       cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P. ARS','P. USD','P. PPT','TC/Impl.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado'];
     } else {
@@ -2844,6 +2856,7 @@ function renderHistorial() {
           <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.nombreCompra||'—'}</td>
           <td style="font-size:11px;font-weight:700;color:var(--navy)">${opLabel}</td>
           <td class="id-mono" style="font-weight:700">${o.instTicker||'—'}</td>
+          <td>${o.instPlazo||'—'}</td>
           <td class="id-mono">${o.instNominales||'—'}</td>
           <td class="id-mono">${o.instPrecioMesa||'—'}</td>
           <td class="id-mono">${o.instPrecioCliente||'—'}</td>
@@ -2883,7 +2896,7 @@ function renderHistorial() {
       const tcShow = o.senebiTipo==='mesa'?(o.tcCliente||''):o.senebiTipo==='instrumento'?(o.instPrecioMesa||''):(o.tcImplicito||'');
       const montoArs = o.senebiTipo==='mesa'?(o.arsCliente||''):o.senebiTipo==='instrumento'?(o.instMontoMesa||''):(o.montoArs||'');
       const montoUsd = o.senebiTipo==='mesa'?(o.montoSenebi||''):o.senebiTipo==='instrumento'?(o.instMontoCliente||''):(o.montoUsd||'');
-      if (isInstHist) return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,o.instTicker||'',o.instNominales||'',o.instPrecioMesa||'',o.instPrecioCliente||'',o.instMontoMesa||'',o.instMontoCliente||'',o.resultado||'',o.estado,...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
+      if (isInstHist) return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,o.instTicker||'',o.instPlazo||'',o.instNominales||'',o.instPrecioMesa||'',o.instPrecioCliente||'',o.instMontoMesa||'',o.instMontoCliente||'',o.resultado||'',o.estado,...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
       return [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||'',o.tickerArs||'',o.tickerUsd||'',o.nominales||'',o.precioArs||'',o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado,...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
     };
 
@@ -3038,6 +3051,7 @@ function openModal() {
   var stw=document.getElementById('senebi-tipo-wrap'); if(stw) stw.style.display='none';
   ['f-senebi-monto','f-tc-mesa','f-tc-cliente','f-ars-mesa','f-ars-cliente','f-resultado-mesa','f-ticker-base','f-ticker-ars','f-ticker-usd','f-nominales','f-precio-ars','f-precio-usd','f-monto-ars-dir','f-monto-usd-dir','f-tc-implicito','f-precio-ppt','f-monto-ppt','f-precio-ppt-mep','f-monto-ppt-mep','f-precio-ppt-cable','f-monto-ppt-cable','f-resultado-directo','f-inst-ticker','f-inst-nominales','f-inst-precio-mesa','f-inst-precio-cliente','f-inst-monto-mesa','f-inst-monto-cliente','f-inst-resultado'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
   var fi=document.getElementById('senebi-form-instrumento'); if(fi) fi.style.display='none';
+  var fp=document.getElementById('f-inst-plazo'); if(fp) fp.value='';
   var pe=document.getElementById('ppt-error-multiple'); if(pe) pe.style.display='none';
   const pl=document.getElementById('f-plazo');if(pl)pl.value='';
   resetPptFields();
@@ -3289,6 +3303,7 @@ function submitOrder() {
     resultado:    tab==='senebi'&&currentSenebiTipo==='directo' ? (document.getElementById('f-resultado-directo')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='mesa' ? (document.getElementById('f-resultado-mesa')?.value||'') : (tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-resultado')?.value||'') : '')),
     // Instrumento
     instTicker:       tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-ticker')?.value||'')         : '',
+    instPlazo:        tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-plazo')?.value||'')          : '',
     instNominales:    tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-nominales')?.value||'')       : '',
     instPrecioMesa:   tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-precio-mesa')?.value||'')    : '',
     instPrecioCliente:tab==='senebi'&&currentSenebiTipo==='instrumento' ? (document.getElementById('f-inst-precio-cliente')?.value||'') : '',
