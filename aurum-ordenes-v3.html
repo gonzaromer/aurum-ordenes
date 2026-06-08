@@ -2542,7 +2542,7 @@ function renderTable() {
   }
   if (tab==='ppt')    cols.push('Operación','Ticker','Moneda','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $');
   if (tab!=='lic' && tab!=='senebi' && tab!=='ppt') cols.push('Importe');
-  cols.push('Prioridad','Estado');
+  cols.push('Prioridad','Estado','Acciones');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
   cols.push('');
 
@@ -2853,6 +2853,7 @@ function renderHistorial() {
         <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.fondo||'',o.monedaFci||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
@@ -2874,6 +2875,7 @@ function renderHistorial() {
         <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.banco||'',o.moneda||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
@@ -2895,6 +2897,7 @@ function renderHistorial() {
         <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.monedaConv||'',o.fechaLiq||'',o.importe||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
@@ -2917,6 +2920,7 @@ function renderHistorial() {
         <td><span class="tipo-badge">${o.monedaLic||'—'}</span></td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.comitente,o.cliente,o.denominacion||'',o.precioTasa||'',o.cantidad||'',o.monedaLic||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
@@ -2982,6 +2986,7 @@ function renderHistorial() {
         <td class="id-mono" style="color:var(--teal-dark);font-weight:800">${o.resultado||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => {
@@ -3019,6 +3024,7 @@ function renderHistorial() {
         <td class="id-mono" style="font-weight:800;color:var(--navy)">${o.pptNetoPesos||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => [o.id,o.fecha,o.tipo,o.pptTipo||'',o.pptTicker||'',o.pptMoneda||'',o.pptTc||'',o.pptVn||'',o.pptPrecio||'',o.pptBruto||'',o.pptArancelMonto||'',o.pptIvaArancel||'',o.pptDdmm||'',o.pptIvaDdmm||'',o.pptNetoUsd||'',o.pptNetoPesos||'',o.estado, ...(showComercial?[comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor]:[])];
@@ -3043,6 +3049,7 @@ function renderHistorial() {
         <td class="id-mono" style="font-weight:700">${o.importe||'—'}</td>
         <td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>
         ${showComercial?`<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>`:''}
+        <td style="white-space:nowrap"><button onclick="showComentario('${o.fbKey||o.id}')" style="background:none;border:1.5px solid #2D7DD2;color:#2D7DD2;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700">&#128065; Ver</button></td>
       </tr>`;
     };
     buildCsvRow = o => {
