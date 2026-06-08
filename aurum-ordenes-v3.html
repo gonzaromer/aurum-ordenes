@@ -2291,18 +2291,30 @@ function getBtns(o) {
   return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
 function showComentario(id) {
-  const o = orders.find(x => x.id===id || x.fbKey===id);
-  if (!o) return;
-  const comentario = (o.comentarios||'').trim();
-  const modal  = document.getElementById('comentario-modal');
-  const body   = document.getElementById('comentario-modal-body');
-  const titulo = document.getElementById('comentario-modal-titulo');
-  if (!modal || !body) return;
-  titulo.textContent = 'Comentario — ' + (o.cliente || o.comitenteCompra || o.id);
-  body.textContent   = comentario || 'Sin comentarios.';
-  body.style.color     = comentario ? 'var(--text)' : 'var(--text-muted)';
-  body.style.fontStyle = comentario ? 'normal' : 'italic';
-  modal.style.display  = 'flex';
+  // Cargar la orden en el modal de edicion (modo solo lectura)
+  editOrder(id);
+  // Esperar que el modal cargue y luego poner en modo lectura
+  setTimeout(function() {
+    // Cambiar titulo
+    var titulo = document.getElementById('modal-title');
+    if (titulo) titulo.textContent = 'Ver Orden';
+    // Deshabilitar todos los inputs, selects y textareas
+    var modal = document.getElementById('modal');
+    if (!modal) return;
+    modal.querySelectorAll('input, select, textarea, button.btn-submit').forEach(function(el) {
+      if (el.classList.contains('modal-close')) return;
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.85';
+      el.style.cursor = 'default';
+    });
+    // Cambiar footer: solo boton Cerrar
+    var footer = modal.querySelector('.modal-footer');
+    if (footer) {
+      footer.innerHTML = '<button class="btn-cancel" onclick="closeModal();window._viewMode=false;">Cerrar</button>';
+    }
+    window._viewMode = true;
+  }, 50);
 }
 function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
@@ -3075,6 +3087,24 @@ function openModal() {
   document.getElementById('modal').classList.add('open');
 }
 function closeModal() {
+  // Si estaba en modo ver, restaurar el footer
+  if (window._viewMode) {
+    window._viewMode = false;
+    var footer = document.querySelector('#modal .modal-footer');
+    if (footer) {
+      footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-submit" onclick="submitOrder()">Enviar Orden</button>';
+    }
+    // Rehabilitar campos
+    var modal = document.getElementById('modal');
+    if (modal) {
+      modal.querySelectorAll('input, select, textarea').forEach(function(el) {
+        el.disabled = false;
+        el.style.pointerEvents = '';
+        el.style.opacity = '';
+        el.style.cursor = '';
+      });
+    }
+  }
   document.getElementById('modal').classList.remove('open');
   document.getElementById('client-dd').classList.remove('open');
   window._editingId=null; window._editingFbKey=null;
@@ -3732,25 +3762,5 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-  <!-- Modal Comentario -->
-  <div id="comentario-modal" style="display:none;position:fixed;inset:0;background:rgba(20,30,70,0.45);z-index:9999;align-items:center;justify-content:center">
-    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(20,30,80,0.18);padding:28px 32px;max-width:480px;width:90%;position:relative">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div id="comentario-modal-titulo" style="font-size:14px;font-weight:800;color:var(--navy);font-family:Nunito,sans-serif"></div>
-        <button onclick="document.getElementById('comentario-modal').style.display='none'"
-          style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
-      </div>
-      <div id="comentario-modal-body"
-        style="font-size:13px;font-family:Nunito,sans-serif;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;min-height:60px;white-space:pre-wrap">
-      </div>
-      <div style="text-align:right;margin-top:16px">
-        <button onclick="document.getElementById('comentario-modal').style.display='none'"
-          style="background:var(--navy);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-family:Nunito,sans-serif;font-size:13px;font-weight:700;cursor:pointer">
-          Cerrar
-        </button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>
