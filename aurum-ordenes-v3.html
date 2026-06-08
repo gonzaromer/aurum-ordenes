@@ -2275,9 +2275,9 @@ function clearSenebiVenta() {
 function getBtns(o) {
   var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:3px';
   var eid = o.fbKey || o.id;
-  var vBtn = '<button style="'+s+';border-color:#2D7DD2;color:#2D7DD2" onclick="showComentario(\\'+eid+'\\')">👁 Ver</button>';
-  var eBtn = '<button style="'+s+'" onclick="editOrder(\\'+eid+'\\')">\u26a1️ Editar</button>';
-  var dBtn = '<button style="'+s+'" onclick="deleteOrder(\\'+eid+'\\')">🗑 Eliminar</button>';
+  var vBtn = '<button style="'+s+';border-color:#2D7DD2;color:#2D7DD2" onclick="showComentario(\''+eid+'\')">&#128065; Ver</button>';
+  var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
+  var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
   // Admin puede todo
   if (isAdmin()) return vBtn+eBtn+dBtn;
   // Julián y Gastón: solo SENEBI sin restricción, el resto solo si PENDIENTE
@@ -2290,7 +2290,6 @@ function getBtns(o) {
   if (o.estado === 'PENDIENTE') return vBtn+eBtn+dBtn;
   return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
-
 function showComentario(id) {
   const o = orders.find(x => x.id===id || x.fbKey===id);
   if (!o) return;
