@@ -2291,30 +2291,98 @@ function getBtns(o) {
   return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
 function showComentario(id) {
-  // Cargar la orden en el modal de edicion (modo solo lectura)
-  editOrder(id);
-  // Esperar que el modal cargue y luego poner en modo lectura
+  const o = orders.find(x => x.id===id || x.fbKey===id);
+  if (!o) return;
+  // Cargar la orden sin chequeo de permisos (solo lectura)
+  const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
+  showView(tabMap[o.tab]||'fci-hoy');
+  window._editingId = o.id;
+  window._editingFbKey = o.fbKey;
+  window._viewMode = true;
   setTimeout(function() {
-    // Cambiar titulo
+    // Cargar datos igual que editOrder pero sin check de permisos
+    editOrderData(o);
+    // Titulo
     var titulo = document.getElementById('modal-title');
-    if (titulo) titulo.textContent = 'Ver Orden';
-    // Deshabilitar todos los inputs, selects y textareas
+    if (titulo) titulo.textContent = 'Ver Orden — ' + (o.tipo||'');
+    // Deshabilitar todos los campos
     var modal = document.getElementById('modal');
     if (!modal) return;
-    modal.querySelectorAll('input, select, textarea, button.btn-submit').forEach(function(el) {
-      if (el.classList.contains('modal-close')) return;
+    modal.querySelectorAll('input, select, textarea').forEach(function(el) {
       el.disabled = true;
       el.style.pointerEvents = 'none';
-      el.style.opacity = '0.85';
+      el.style.opacity = '0.9';
       el.style.cursor = 'default';
     });
-    // Cambiar footer: solo boton Cerrar
+    // Footer solo Cerrar
     var footer = modal.querySelector('.modal-footer');
-    if (footer) {
-      footer.innerHTML = '<button class="btn-cancel" onclick="closeModal();window._viewMode=false;">Cerrar</button>';
+    if (footer) footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cerrar</button>';
+  }, 80);
+}
+
+function editOrderData(o) {
+  // Cargar datos de la orden en el modal (sin abrir modal ni chequear permisos)
+  if (!o) return;
+  selectedClient = {comitente:o.comitente, nombre:o.cliente};
+  var cst = document.getElementById('client-sel-text');
+  var csd = document.getElementById('client-sel-display');
+  var cms = document.getElementById('client-modal-search');
+  if (cst) cst.textContent = o.comitente+' · '+o.cliente;
+  if (csd) csd.style.display='flex';
+  if (cms) cms.style.display='none';
+  var set = function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+  set('f-tipo', o.tipo);
+  set('f-prioridad', o.prioridad);
+  set('f-comentarios', o.comentarios);
+  onTipoChange();
+  if (o.tab==='fci') { set('f-importe-fci',o.importe); set('f-fondo-fci',o.fondo); set('f-moneda-fci',o.monedaFci||o.moneda); }
+  else if (o.tab==='pagos') { set('f-importe',o.importe); set('f-banco',o.banco); set('f-moneda',o.moneda||o.monedaFci); set('f-tipo-pago',o.tipoPago); }
+  else if (o.tab==='conv') { set('f-importe-conv',o.importe); set('f-moneda-conv',o.monedaConv); set('f-fecha-liq',o.fechaLiq); set('f-fecha-orden',o.fechaOrden); }
+  else if (o.tab==='lic') { set('f-denominacion',o.denominacion); set('f-precio-tasa',o.precioTasa); set('f-cantidad-lic',o.cantidad); set('f-moneda-lic',o.monedaLic); }
+  else if (o.tab==='senebi') {
+    var selOp = document.getElementById('f-senebi-operacion');
+    if (selOp) { selOp.value=o.senebiOperacion||''; onSenebiOperacionChange(); }
+    if (o.senebiTipo==='mesa') {
+      var btnMesa=document.getElementById('btn-tipo-mesa'); if(btnMesa) btnMesa.click();
+      setTimeout(function(){
+        set('f-senebi-monto',o.montoSenebi); set('f-tc-mesa',o.tcMesa); set('f-tc-cliente',o.tcCliente);
+        set('f-ars-mesa',o.arsMesa); set('f-ars-cliente',o.arsCliente); set('f-resultado-mesa',o.resultado);
+        set('f-ticker-base',o.tickerBase); set('f-plazo-senebi',o.plazo);
+      },30);
+    } else if (o.senebiTipo==='directo') {
+      var btnDir=document.getElementById('btn-tipo-directo'); if(btnDir) btnDir.click();
+      setTimeout(function(){
+        set('f-ticker-ars',o.tickerArs); set('f-ticker-usd',o.tickerUsd); set('f-nominales',o.nominales);
+        set('f-precio-ars',o.precioArs); set('f-precio-usd',o.precioUsd); set('f-monto-ars-dir',o.montoArs);
+        set('f-monto-usd-dir',o.montoUsd); set('f-tc-implicito',o.tcImplicito);
+        set('f-precio-ppt',o.precioPpt); set('f-precio-ppt-mep',o.precioPptMep); set('f-precio-ppt-cable',o.precioPptCable);
+        set('f-monto-ppt',o.montoPpt); set('f-monto-ppt-mep',o.montoPptMep); set('f-monto-ppt-cable',o.montoPptCable);
+        set('f-resultado-directo',o.resultado); set('f-plazo-senebi',o.plazo);
+      },30);
+    } else if (o.senebiTipo==='instrumento') {
+      var fi=document.getElementById('senebi-form-instrumento'); if(fi) fi.style.display='block';
+      currentSenebiTipo='instrumento';
+      set('f-inst-ticker',o.instTicker); set('f-inst-plazo',o.instPlazo); set('f-inst-nominales',o.instNominales);
+      set('f-inst-precio-mesa',o.instPrecioMesa); set('f-inst-precio-cliente',o.instPrecioCliente);
+      set('f-inst-monto-mesa',o.instMontoMesa); set('f-inst-monto-cliente',o.instMontoCliente);
+      set('f-inst-resultado',o.resultado);
     }
-    window._viewMode = true;
-  }, 50);
+    // Comitente SENEBI
+    selectedSenebiCompra = {comitente:o.comitenteCompra, nombre:o.nombreCompra};
+    var cct=document.getElementById('senebi-compra-text'); if(cct) cct.textContent=o.comitenteCompra+' · '+(o.nombreCompra||'');
+    var ccd=document.getElementById('senebi-compra-display'); if(ccd) ccd.style.display='flex';
+    var cci=document.getElementById('senebi-compra-input'); if(cci) cci.style.display='none';
+  } else if (o.tab==='ppt') {
+    set('f-ppt-tipo',o.pptTipo); set('f-ppt-ticker',o.pptTicker);
+    var selM=document.getElementById('f-ppt-moneda'); if(selM){selM.value=o.pptMoneda||'';onPptMonedaChange();}
+    set('f-ppt-tc',o.pptTc); set('f-ppt-vn',o.pptVn); set('f-ppt-precio',o.pptPrecio);
+    var selA=document.getElementById('f-ppt-arancel'); if(selA) selA.value=o.pptArancelTasa||'0.005';
+    set('f-ppt-bruto',o.pptBruto); set('f-ppt-arancel-monto',o.pptArancelMonto);
+    set('f-ppt-iva-arancel',o.pptIvaArancel); set('f-ppt-ddmm',o.pptDdmm);
+    set('f-ppt-iva-ddmm',o.pptIvaDdmm); set('f-ppt-neto-usd',o.pptNetoUsd); set('f-ppt-neto-pesos',o.pptNetoPesos);
+  }
+  // Abrir el modal
+  document.getElementById('modal').classList.add('open');
 }
 function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
