@@ -2275,21 +2275,36 @@ function clearSenebiVenta() {
 function getBtns(o) {
   var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:3px';
   var eid = o.fbKey || o.id;
-  var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
-  var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
+  var vBtn = '<button style="'+s+';border-color:#2D7DD2;color:#2D7DD2" onclick="showComentario(\\'+eid+'\\')">👁 Ver</button>';
+  var eBtn = '<button style="'+s+'" onclick="editOrder(\\'+eid+'\\')">\u26a1️ Editar</button>';
+  var dBtn = '<button style="'+s+'" onclick="deleteOrder(\\'+eid+'\\')">🗑 Eliminar</button>';
   // Admin puede todo
-  if (isAdmin()) return eBtn+dBtn;
+  if (isAdmin()) return vBtn+eBtn+dBtn;
   // Julián y Gastón: solo SENEBI sin restricción, el resto solo si PENDIENTE
   if (isSuperComercial()) {
-    if (o.tab === 'senebi') return eBtn+dBtn;
-    if (o.estado === 'PENDIENTE') return eBtn+dBtn;
-    return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
+    if (o.tab === 'senebi') return vBtn+eBtn+dBtn;
+    if (o.estado === 'PENDIENTE') return vBtn+eBtn+dBtn;
+    return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
   }
   // Comercial regular: solo sus órdenes PENDIENTE
-  if (o.estado === 'PENDIENTE') return eBtn+dBtn;
-  return '<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
+  if (o.estado === 'PENDIENTE') return vBtn+eBtn+dBtn;
+  return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
 
+function showComentario(id) {
+  const o = orders.find(x => x.id===id || x.fbKey===id);
+  if (!o) return;
+  const comentario = (o.comentarios||'').trim();
+  const modal  = document.getElementById('comentario-modal');
+  const body   = document.getElementById('comentario-modal-body');
+  const titulo = document.getElementById('comentario-modal-titulo');
+  if (!modal || !body) return;
+  titulo.textContent = 'Comentario — ' + (o.cliente || o.comitenteCompra || o.id);
+  body.textContent   = comentario || 'Sin comentarios.';
+  body.style.color     = comentario ? 'var(--text)' : 'var(--text-muted)';
+  body.style.fontStyle = comentario ? 'normal' : 'italic';
+  modal.style.display  = 'flex';
+}
 function deleteOrder(id) {
   if (!confirm('Eliminar esta orden?')) return;
   const o = orders.find(x=>x.id===id||x.fbKey===id);
@@ -3718,5 +3733,25 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
+  <!-- Modal Comentario -->
+  <div id="comentario-modal" style="display:none;position:fixed;inset:0;background:rgba(20,30,70,0.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(20,30,80,0.18);padding:28px 32px;max-width:480px;width:90%;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div id="comentario-modal-titulo" style="font-size:14px;font-weight:800;color:var(--navy);font-family:Nunito,sans-serif"></div>
+        <button onclick="document.getElementById('comentario-modal').style.display='none'"
+          style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+      </div>
+      <div id="comentario-modal-body"
+        style="font-size:13px;font-family:Nunito,sans-serif;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;min-height:60px;white-space:pre-wrap">
+      </div>
+      <div style="text-align:right;margin-top:16px">
+        <button onclick="document.getElementById('comentario-modal').style.display='none'"
+          style="background:var(--navy);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-family:Nunito,sans-serif;font-size:13px;font-weight:700;cursor:pointer">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
