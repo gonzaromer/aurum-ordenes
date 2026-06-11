@@ -543,11 +543,17 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <!-- ORDERS VIEW -->
         <div id="orders-view">
           <!-- STATS (admin/supercomercial) -->
-          <div class="stats-grid" id="stats-section" style="display:none">
-            <div class="stat-card"><div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div></div>
+          <div class="stats-grid" id="stats-section" style="display:none;grid-template-columns:repeat(5,1fr)">
+            <div class="stat-card" id="st-card-hoy" style="cursor:pointer;outline:2px solid var(--teal)" onclick="setVistaFutura(false)">
+              <div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div>
+            </div>
             <div class="stat-card"><div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="st-pend">0</div></div></div>
             <div class="stat-card"><div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="st-proc">0</div></div></div>
             <div class="stat-card"><div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="st-exec">0</div></div></div>
+            <div class="stat-card" id="st-card-futuras" style="cursor:pointer;border:1.5px dashed var(--border)" onclick="setVistaFutura(true)">
+              <div class="stat-icon" style="background:rgba(45,125,210,0.10);font-size:18px">📅</div>
+              <div><div class="stat-label">Próximas</div><div class="stat-value" id="st-futuras" style="color:#2D7DD2">0</div></div>
+            </div>
           </div>
           <!-- Filtro tipo operacion SENEBI -->
           <div class="filter-bar" id="senebi-op-filter" style="display:none;flex-wrap:wrap;gap:5px;margin-bottom:8px">
@@ -1745,6 +1751,7 @@ function showView(view) {
   }
 
   setModalFields(view);
+  currentVistaFutura = false;
   renderTable();
   // Actualizar stats del módulo activo
   if (!isAdmin && !isHist && view !== 'senebi-hoy') updateModuleStats(view);
@@ -1849,14 +1856,29 @@ function setFilter(f, el) {
 // ═══════════════════════════════════════════════════
 //  TABLE
 // ═══════════════════════════════════════════════════
+let currentVistaFutura = false;
+
+function setVistaFutura(futura) {
+  currentVistaFutura = futura;
+  const cardHoy     = document.getElementById('st-card-hoy');
+  const cardFuturas = document.getElementById('st-card-futuras');
+  if (cardHoy)     cardHoy.style.outline     = futura ? 'none' : '2px solid var(--teal)';
+  if (cardFuturas) cardFuturas.style.outline  = futura ? '2px solid #2D7DD2' : 'none';
+  if (cardFuturas) cardFuturas.style.borderStyle = futura ? 'solid' : 'dashed';
+  if (cardFuturas) cardFuturas.style.borderColor = futura ? '#2D7DD2' : 'var(--border)';
+  renderTable();
+}
+
 function updateModuleStats(view) {
   const tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[view]||'';
   const t = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha)===TODAY);
+  const futuras = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha) > TODAY);
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('st-total', t.length);
   set('st-pend',  t.filter(o=>o.estado==='PENDIENTE').length);
   set('st-proc',  t.filter(o=>o.estado==='EN PROCESO').length);
   set('st-exec',  t.filter(o=>o.estado==='EJECUTADO').length);
+  set('st-futuras', futuras.length);
 }
 
 function getTabName(view) {
@@ -1865,7 +1887,12 @@ function getTabName(view) {
 
 function getTodayOrders() {
   const tab = getTabName(currentView);
-  let rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
+  let rows;
+  if (currentVistaFutura) {
+    rows = orders.filter(o => o.tab === tab && (o.fechaValor||o.fecha) > TODAY);
+  } else {
+    rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
+  }
   if (!currentUser.isAdmin) {
     if (isSuperComercial()) {
       // Gaston/Julian see their own orders AND orders they created for others
@@ -3801,12 +3828,14 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
     if (currentView !== 'historial' && currentView !== 'admin' && currentView !== 'senebi-hoy') {
       var tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[currentView]||'';
       var t = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)===TODAY;});
+      var futuras = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)>TODAY;});
       var el=document.getElementById('st-total');
       if(el){
         document.getElementById('st-total').textContent=t.length;
         document.getElementById('st-pend').textContent=t.filter(function(o){return o.estado==='PENDIENTE';}).length;
         document.getElementById('st-proc').textContent=t.filter(function(o){return o.estado==='EN PROCESO';}).length;
         document.getElementById('st-exec').textContent=t.filter(function(o){return o.estado==='EJECUTADO';}).length;
+        var elF=document.getElementById('st-futuras'); if(elF) elF.textContent=futuras.length;
       }
     }
   }
