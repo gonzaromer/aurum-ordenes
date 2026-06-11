@@ -519,13 +519,14 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="topbar-title" id="page-title">FCI — Hoy</div>
         <div class="topbar-right">
           <span class="count-tag" id="count-tag">0 órdenes</span>
+          <button class="xlsx-btn" id="senebi-excel-btn" style="display:none" onclick="exportSenebiDiarioXLSX()">⬇ Excel</button>
           <button class="new-btn" id="new-order-btn" onclick="openModal()">+ Nueva Orden</button>
         </div>
       </div>
       <div class="content">
 
         <!-- STATS SENEBI -->
-        <div class="stats-grid" id="senebi-stats-section" style="display:none">
+        <div class="stats-grid" id="senebi-stats-section" style="display:none;grid-template-columns:repeat(5,1fr)">
           <div class="stat-card" id="snb-card-all" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('all',this)">
             <div class="stat-icon c-total">📈</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="snb-st-total">0</div></div>
           </div>
@@ -537,6 +538,10 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           </div>
           <div class="stat-card" id="snb-card-exec" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('EJECUTADO',this)">
             <div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="snb-st-exec">0</div></div>
+          </div>
+          <div class="stat-card" style="border:1.5px solid rgba(39,174,122,0.3);background:rgba(39,174,122,0.04)">
+            <div class="stat-icon" style="background:rgba(39,174,122,0.12);font-size:18px">💰</div>
+            <div><div class="stat-label">Resultado Día</div><div class="stat-value" id="snb-st-resultado" style="font-size:16px;color:var(--teal-dark)">$0</div></div>
           </div>
         </div>
 
@@ -1167,7 +1172,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Tipo Operación *</label>
-            <select class="form-select" id="f-ppt-tipo">
+            <select class="form-select" id="f-ppt-tipo" onchange="calcPPT()">
               <option value="">--</option>
               <option value="COMPRA">COMPRA</option>
               <option value="VENTA">VENTA</option>
@@ -1497,11 +1502,22 @@ function calcPPT() {
   const ddmm    = tcFalta ? 0 : bruto * tcPesos * 0.0009688;
   const ivaDdmm = ddmm * 0.21;
 
-  // Neto USD = Bruto - Arancel (solo si MEP/Cable)
-  const netoUSD = esUSD ? bruto - arancelMonto : 0;
+  const tipoOp = document.getElementById('f-ppt-tipo')?.value || '';
+  const esVenta = tipoOp === 'VENTA';
+  const esCompra = tipoOp === 'COMPRA';
 
-  // Neto $ = IVA Arancel + DDMM + IVA DDMM
-  const netoPesos = ivaArancel + ddmm + ivaDdmm;
+  // Costos en pesos (siempre positivos)
+  const costoPesos = ivaArancel + ddmm + ivaDdmm;
+
+  // Neto USD (MEP/Cable): Venta = Bruto - Arancel, Compra = Bruto + Arancel
+  const netoUSD = esUSD ? (esVenta ? bruto - arancelMonto : bruto + arancelMonto) : 0;
+
+  // Neto ARS: Venta = Bruto - Arancel - costos pesos, Compra = Bruto + Arancel + costos pesos
+  // Para MEP/Cable el Neto $ son solo los costos en pesos (siempre egresos)
+  let netoARS = 0;
+  if (!esUSD && bruto > 0) {
+    netoARS = esVenta ? bruto - arancelMonto - costoPesos : bruto + arancelMonto + costoPesos;
+  }
 
   // Labels moneda
   const monedaTag = esUSD ? moneda : 'ARS';
@@ -1510,13 +1526,38 @@ function calcPPT() {
   if (elBrutoLbl) elBrutoLbl.textContent = '(' + monedaTag + ')';
   if (elArancLbl) elArancLbl.textContent = '(' + monedaTag + ')';
 
+  // Label neto USD
+  const elNetoUsdLbl = document.getElementById('lbl-ppt-neto-usd');
+  if (elNetoUsdLbl && esUSD) elNetoUsdLbl.textContent = 'Neto ' + moneda;
+
+  // Label neto pesos
+  const elNetoPesosLbl = document.getElementById('lbl-ppt-neto-pesos-lbl');
+
   set('f-ppt-bruto',         bruto > 0        ? fmt2(bruto)         : '');
   set('f-ppt-arancel-monto', arancelMonto > 0 ? fmt2(arancelMonto)  : '');
   set('f-ppt-iva-arancel',   ivaArancel > 0   ? fmt2(ivaArancel)    : '');
   set('f-ppt-ddmm',          ddmm > 0         ? fmt2(ddmm)          : '');
   set('f-ppt-iva-ddmm',      ivaDdmm > 0      ? fmt2(ivaDdmm)       : '');
-  set('f-ppt-neto-usd',      esUSD && netoUSD > 0 ? fmt2(netoUSD)   : '');
-  set('f-ppt-neto-pesos',    netoPesos > 0    ? fmt2(netoPesos)      : '');
+
+  if (esUSD) {
+    // MEP/Cable: Neto USD + Neto $ (costos en pesos)
+    const elNetoUsd = document.getElementById('f-ppt-neto-usd');
+    if (elNetoUsd) {
+      elNetoUsd.value = netoUSD !== 0 ? fmt2(Math.abs(netoUSD)) : '';
+      elNetoUsd.style.color = esVenta ? 'var(--teal-dark)' : '#E04B4B';
+    }
+    set('f-ppt-neto-pesos', costoPesos > 0 ? fmt2(costoPesos) : '');
+  } else {
+    // ARS: solo Neto $
+    set('f-ppt-neto-usd', '');
+    const elNetoPesos = document.getElementById('f-ppt-neto-pesos');
+    if (elNetoPesos && netoARS !== 0) {
+      elNetoPesos.value = fmt2(Math.abs(netoARS));
+      elNetoPesos.style.color = esVenta ? 'var(--teal-dark)' : '#E04B4B';
+    } else if (elNetoPesos) {
+      elNetoPesos.value = '';
+    }
+  }
 }
 
 function resetPptFields() {
@@ -1734,8 +1775,10 @@ function showView(view) {
   const snbStats = document.getElementById('senebi-stats-section');
   const snbOpFilter = document.getElementById('senebi-op-filter');
   const filterBar = document.getElementById('filter-bar');
+  const snbExcelBtn = document.getElementById('senebi-excel-btn');
   if (snbStats) snbStats.style.display = isSenebi ? 'grid' : 'none';
   if (snbOpFilter) snbOpFilter.style.display = isSenebi ? 'flex' : 'none';
+  if (snbExcelBtn) snbExcelBtn.style.display = isSenebi ? 'inline-flex' : 'none';
   // Ocultar chips de estado para SENEBI, mostrar para el resto
   if (filterBar) filterBar.style.display = isSenebi ? 'none' : 'flex';
   if (isSenebi) {
@@ -1965,6 +2008,31 @@ function setSenebiOpFilter(op, el) {
   renderTable();
 }
 
+function updateSenebiChipBadges() {
+  // Contar órdenes del día por tipo de operación
+  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
+  const countByOp = {};
+  hoy.forEach(o => { if(o.senebiOperacion) countByOp[o.senebiOperacion] = (countByOp[o.senebiOperacion]||0)+1; });
+  // Actualizar cada chip
+  document.querySelectorAll('#senebi-op-filter .filter-chip').forEach(function(chip) {
+    const op = chip.dataset.snbop;
+    const count = countByOp[op] || 0;
+    // Remover badge anterior
+    const prev = chip.querySelector('.chip-badge');
+    if (prev) prev.remove();
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'chip-badge';
+      badge.textContent = count;
+      badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:800;margin-left:5px;vertical-align:middle';
+      chip.appendChild(badge);
+      chip.style.borderColor = 'var(--teal)';
+    } else {
+      chip.style.borderColor = '';
+    }
+  });
+}
+
 function updateSenebiStats() {
   const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
   const el = id => document.getElementById(id);
@@ -1973,6 +2041,15 @@ function updateSenebiStats() {
   el('snb-st-pend').textContent  = hoy.filter(o => o.estado === 'PENDIENTE').length;
   el('snb-st-proc').textContent  = hoy.filter(o => o.estado === 'EN PROCESO').length;
   el('snb-st-exec').textContent  = hoy.filter(o => o.estado === 'EJECUTADO').length;
+  // Resultado del día: suma de todos los resultados
+  const parseNum = v => parseFloat((v||'0').replace(/\./g,'').replace(',','.')) || 0;
+  const totalRes = hoy.reduce((acc, o) => acc + parseNum(o.resultado), 0);
+  const elRes = el('snb-st-resultado');
+  if (elRes) {
+    elRes.textContent = (totalRes >= 0 ? '$' : '-$') + Math.abs(totalRes).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    elRes.style.color = totalRes >= 0 ? 'var(--teal-dark)' : '#E04B4B';
+  }
+  updateSenebiChipBadges();
 }
 
 // Etiquetas de monto segun operacion
@@ -3105,6 +3182,33 @@ function renderHistorial() {
   window._histExportRows = rows;
   window._histExportBuildCsvRow = buildCsvRow;
   window._histExportCols = cols;
+}
+
+function exportSenebiDiarioXLSX() {
+  const rows = getTodayOrders();
+  if (!rows.length) { showToast('No hay órdenes SENEBI hoy'); return; }
+  const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
+  const cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','P.PPT','TC / TC Imp.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado','Comercial'];
+  let csv = cols.map(c=>'"'+c+'"').join(';') + '\n';
+  rows.forEach(o => {
+    const opLabel = opLabels[o.senebiOperacion]||o.senebiOperacion||'';
+    const metodo  = o.senebiTipo==='mesa'?'Con Mesa':o.senebiTipo==='directo'?'Directo':o.senebiTipo==='instrumento'?'Instrumento':'';
+    const tcShow  = o.senebiTipo==='mesa'?(o.tcCliente||''):o.senebiTipo==='instrumento'?(o.instPrecioMesa||''):(o.tcImplicito||'');
+    const montoArs= o.senebiTipo==='mesa'?(o.arsCliente||''):o.senebiTipo==='instrumento'?(o.instMontoMesa||''):(o.montoArs||'');
+    const montoUsd= o.senebiTipo==='mesa'?(o.montoSenebi||''):o.senebiTipo==='instrumento'?(o.instMontoCliente||''):(o.montoUsd||'');
+    const tickerA = o.senebiTipo==='instrumento'?(o.instTicker||''):(o.tickerArs||'');
+    const noms    = o.senebiTipo==='instrumento'?(o.instNominales||''):(o.nominales||'');
+    const pArs    = o.senebiTipo==='instrumento'?(o.instPrecioCliente||''):(o.precioArs||'');
+    const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor||'';
+    const cells   = [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||o.instPlazo||'',tickerA,o.tickerUsd||'',noms,pArs,o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado,comName];
+    csv += cells.map(v=>'"'+(v||'').toString().replace(/"/g,'""')+'"').join(';') + '\n';
+  });
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'senebi-'+TODAY+'.csv';
+  a.click();
+  showToast('✓ Exportando SENEBI...');
 }
 
 function exportHistorialXLSX() {
