@@ -806,7 +806,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha</label>
+            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
             <input class="form-input" id="f-fecha-fci" type="date">
           </div>
         </div>
@@ -841,7 +841,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha</label>
+            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
             <input class="form-input" id="f-fecha-pago" type="date">
           </div>
         </div>
@@ -865,7 +865,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Fecha</label>
+            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
             <input class="form-input" id="f-fecha-conv" type="date">
           </div>
           <div class="form-group">
@@ -1851,7 +1851,7 @@ function setFilter(f, el) {
 // ═══════════════════════════════════════════════════
 function updateModuleStats(view) {
   const tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[view]||'';
-  const t = orders.filter(o => o.tab===tab && o.fecha===TODAY);
+  const t = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha)===TODAY);
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('st-total', t.length);
   set('st-pend',  t.filter(o=>o.estado==='PENDIENTE').length);
@@ -1865,7 +1865,7 @@ function getTabName(view) {
 
 function getTodayOrders() {
   const tab = getTabName(currentView);
-  let rows = orders.filter(o => o.tab === tab && o.fecha === TODAY);
+  let rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
   if (!currentUser.isAdmin) {
     if (isSuperComercial()) {
       // Gaston/Julian see their own orders AND orders they created for others
@@ -1939,7 +1939,7 @@ function setSenebiOpFilter(op, el) {
 }
 
 function updateSenebiStats() {
-  const hoy = orders.filter(o => o.tab === 'senebi' && o.fecha === TODAY);
+  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
   const el = id => document.getElementById(id);
   if (!el('snb-st-total')) return;
   el('snb-st-total').textContent = hoy.length;
@@ -2341,7 +2341,7 @@ function editOrderData(o) {
   onTipoChange();
   if (o.tab==='fci') { set('f-importe-fci',o.importe); set('f-fondo-fci',o.fondo); set('f-moneda-fci',o.monedaFci||o.moneda); }
   else if (o.tab==='pagos') { set('f-importe',o.importe); set('f-banco',o.banco); set('f-moneda',o.moneda||o.monedaFci); set('f-tipo-pago',o.tipoPago); }
-  else if (o.tab==='conv') { set('f-importe-conv',o.importe); set('f-moneda-conv',o.monedaConv); set('f-fecha-liq',o.fechaLiq); set('f-fecha-orden',o.fechaOrden); }
+  else if (o.tab==='conv') { set('f-importe-conv',o.importe); set('f-moneda-conv',o.monedaConv); set('f-fecha-liq',o.fechaLiq); set('f-fecha-conv',o.fechaValor||o.fecha); }
   else if (o.tab==='lic') { set('f-denominacion',o.denominacion); set('f-precio-tasa',o.precioTasa); set('f-cantidad-lic',o.cantidad); set('f-moneda-lic',o.monedaLic); }
   else if (o.tab==='senebi') {
     var selOp = document.getElementById('f-senebi-operacion');
@@ -2415,7 +2415,7 @@ function editOrder(id) {
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
       document.getElementById('f-importe-fci').value=o.importe||'';
-      document.getElementById('f-fecha-fci').value=o.fecha||'';
+      document.getElementById('f-fecha-fci').value=o.fechaValor||o.fecha||'';
     } else if (o.tab==='pagos') {
       selectedBanco=o.banco||'';
       document.getElementById('banco-sel-text').textContent=o.banco||'';
@@ -2423,12 +2423,12 @@ function editOrder(id) {
       document.getElementById('banco-search-input').style.display='none';
       document.getElementById('f-moneda-pago').value=o.moneda||'';
       document.getElementById('f-importe-pago').value=o.importe||'';
-      document.getElementById('f-fecha-pago').value=o.fecha||'';
+      document.getElementById('f-fecha-pago').value=o.fechaValor||o.fecha||'';
     } else if (o.tab==='conv') {
       document.getElementById('f-importe-conv').value=o.importe||'';
       document.getElementById('f-moneda-conv').value=o.monedaConv||'';
       document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
-      document.getElementById('f-fecha-conv').value=o.fecha||'';
+      document.getElementById('f-fecha-conv').value=o.fechaValor||o.fecha||'';
     } else if (o.tab==='senebi') {
       // Restaurar comitente
       selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
@@ -3344,6 +3344,10 @@ function submitOrder() {
   const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON',lic:'LIC',senebi:'SNB'};
   const prefix = prefixes[tab]||'ORD';
   const id = `${prefix}-${String(orderCounter).padStart(3,'0')}`;
+  const fechaValor = tab==='fci'   ? document.getElementById('f-fecha-fci').value
+              : tab==='pagos' ? document.getElementById('f-fecha-pago').value
+              : tab==='conv'  ? document.getElementById('f-fecha-conv').value
+              : '';
   const fecha = tab==='fci'   ? document.getElementById('f-fecha-fci').value
               : tab==='pagos' ? document.getElementById('f-fecha-pago').value
               : tab==='conv'  ? document.getElementById('f-fecha-conv').value
@@ -3359,7 +3363,8 @@ function submitOrder() {
     creadaPor: currentUser.id,
     estado: 'PENDIENTE',
     prioridad: document.getElementById('f-prioridad').value || 'MEDIO',
-    fecha: fecha || TODAY,
+    fecha: TODAY,
+    fechaValor: fechaValor || TODAY,
     comentarios: document.getElementById('f-comentarios').value,
     importe: tab==='fci'   ? document.getElementById('f-importe-fci').value
            : tab==='pagos' ? document.getElementById('f-importe-pago').value
@@ -3795,7 +3800,7 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
     // Actualizar stats generales para todos los usuarios
     if (currentView !== 'historial' && currentView !== 'admin' && currentView !== 'senebi-hoy') {
       var tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[currentView]||'';
-      var t = orders.filter(function(o){return o.tab===tab && o.fecha===TODAY;});
+      var t = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)===TODAY;});
       var el=document.getElementById('st-total');
       if(el){
         document.getElementById('st-total').textContent=t.length;
