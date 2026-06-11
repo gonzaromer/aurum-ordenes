@@ -616,7 +616,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </select>
             <select class="filter-select" id="hist-estado" style="width:140px">
               <option value="">Estado: Todos</option>
-              <option>PENDIENTE</option><option>ENVIADO</option>
+              <option>PENDIENTE</option>
               <option>EN PROCESO</option><option>EJECUTADO</option>
             </select>
             <select class="filter-select" id="hist-comercial" style="width:160px">
@@ -814,14 +814,14 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
       <!-- PAGO fields -->
       <div id="pago-fields" style="display:none">
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Banco *</label>
+          <div class="form-group" id="banco-group">
+            <label class="form-label">Banco</label>
             <div class="client-search-wrap" id="banco-wrap">
               <div id="banco-sel-display" style="display:none" class="client-selected-tag" onclick="clearBancoSel()">
                 <span id="banco-sel-text">—</span><span class="client-clear">✕</span>
               </div>
               <input type="text" class="client-search-input" id="banco-search-input"
-                placeholder="Buscar banco..." oninput="filterBancos()" onfocus="openBancoDd()" autocomplete="off">
+                placeholder="Buscar o escribir banco..." oninput="filterBancos();selectedBanco=this.value||null" onfocus="openBancoDd()" autocomplete="off">
               <div class="client-dropdown" id="banco-dd"></div>
             </div>
           </div>
@@ -865,12 +865,12 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Fecha de Liquidación</label>
-            <input class="form-input" id="f-fecha-liq" type="date">
-          </div>
-          <div class="form-group">
             <label class="form-label">Fecha</label>
             <input class="form-input" id="f-fecha-conv" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de Liquidación</label>
+            <input class="form-input" id="f-fecha-liq" type="date">
           </div>
         </div>
       </div>
@@ -1778,16 +1778,18 @@ function onTipoChange() {
     showFields('pago');
     const bancoWrap = document.getElementById('banco-wrap');
     const isCheque = (t === 'ECHEQ' || t === 'CHEQUE FISICO');
-    if (bancoWrap) {
-      bancoWrap.style.opacity = isCheque ? '0.4' : '1';
-      bancoWrap.style.pointerEvents = isCheque ? 'none' : '';
-    }
+    const monedaPago = document.getElementById('f-moneda-pago');
+    const bancoGroup = document.getElementById('banco-group');
+    if (bancoGroup) bancoGroup.style.display = isCheque ? 'none' : '';
     if (isCheque) {
       selectedBanco = null;
       const bsd = document.getElementById('banco-sel-display');
       const bsi = document.getElementById('banco-search-input');
       if (bsd) bsd.style.display = 'none';
       if (bsi) { bsi.style.display = 'block'; bsi.value = ''; }
+      if (monedaPago) monedaPago.value = 'ARS';
+    } else {
+      if (monedaPago && !monedaPago.value) monedaPago.value = '';
     }
   }
   else if (t === 'CONVERSION') showFields('conv');
@@ -1900,13 +1902,15 @@ function toggleLiquidez(inputId, btnId) {
     input.readOnly = false;
     input.style.background = '';
     input.style.color = '';
-    if (btn) { btn.style.background='var(--surface2)'; btn.style.color='var(--text-muted)'; btn.style.borderColor='var(--border)'; }
+    if (btn) { btn.style.background='var(--surface2)'; btn.style.color='var(--text-muted)'; btn.style.borderColor='var(--border)'; btn.textContent='Liquidez'; btn.style.fontWeight='700'; }
+    input.style.fontWeight = '';
   } else {
     input.value = 'Liquidez';
     input.readOnly = true;
-    input.style.background = '#F4F6FB';
+    input.style.background = '#EAF6F0';
     input.style.color = 'var(--teal-dark)';
-    if (btn) { btn.style.background='var(--teal)'; btn.style.color='#fff'; btn.style.borderColor='var(--teal)'; }
+    input.style.fontWeight = '800';
+    if (btn) { btn.style.background='var(--navy)'; btn.style.color='#fff'; btn.style.borderColor='var(--navy)'; btn.textContent='✓ Liquidez'; btn.style.fontWeight='800'; }
   }
 }
 
@@ -2542,9 +2546,9 @@ function renderTable() {
   }
   if (tab==='ppt')    cols.push('Operación','Ticker','Moneda','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $');
   if (tab!=='lic' && tab!=='senebi' && tab!=='ppt') cols.push('Importe');
-  cols.push('Prioridad','Estado','Acciones');
+  cols.push('Prioridad','Estado');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
-  cols.push('');
+  cols.push('Acciones');
 
   const tw = document.getElementById('main-table-wrap');
   if(tw) { if(tab==='senebi') tw.classList.add('compact'); else tw.classList.remove('compact'); }
@@ -2557,7 +2561,7 @@ function renderTable() {
   }
 
   body.innerHTML = rows.map((o, idx) => { o.nro = idx + 1;
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
+    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate','PAGO RESCATE':'t-pago',PAGO:'t-pago',ECHEQ:'t-pago','CHEQUE FISICO':'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const pClass = o.prioridad ? 'p-'+o.prioridad : '';
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
@@ -2653,7 +2657,7 @@ function renderTable() {
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
     let statusCell = canChange
       ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
-           ${['PENDIENTE','ENVIADO','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
+           ${['PENDIENTE','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
 
@@ -2672,7 +2676,7 @@ function renderTable() {
       <td data-tip="${o.prioridad||''}">${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
-      <td style="min-width:160px;white-space:nowrap">${getBtns(o)}</td>
+      <td style="width:160px;min-width:160px;white-space:nowrap">${getBtns(o)}</td>
     </tr>`;
   }).join('');
 
@@ -3034,7 +3038,7 @@ function renderHistorial() {
     cols = ['ID','Fecha','Tipo','Comitente','Cliente','Detalle','Importe','Estado'];
     if (showComercial) cols.push('Comercial');
     buildRow = o => {
-      const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
+      const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate','PAGO RESCATE':'t-pago',PAGO:'t-pago',ECHEQ:'t-pago','CHEQUE FISICO':'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
       const sKey = 's-'+(o.estado||'').replace(' ','-');
       const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
       let detalle = o.fondo || o.banco || o.monedaConv || '—';
@@ -3438,7 +3442,8 @@ function submitOrder() {
   if (tab==='ppt' && !document.getElementById('f-ppt-precio').value) { showToast('⚠ Ingresá el precio'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && currentSenebiTipo==='instrumento' && !document.getElementById('f-inst-ticker').value.trim()) { showToast('⚠ Ingresá el ticker del instrumento'); return; }
-  if (tab==='pagos' && (!newOrder.banco || !newOrder.moneda)) { showToast('⚠ Completá banco y moneda'); return; }
+  if (tab==='pagos' && !newOrder.moneda) { showToast('⚠ Seleccioná la moneda'); return; }
+  if (tab==='pagos' && newOrder.moneda !== 'CABLE' && !newOrder.banco) { showToast('⚠ Completá el banco'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && !selectedSenebiCompra) { showToast('⚠ Selecciona el comitente'); return; }
   if (tab==='senebi' && !document.getElementById('f-senebi-operacion').value) { showToast('⚠ Selecciona el tipo de operacion'); return; }
