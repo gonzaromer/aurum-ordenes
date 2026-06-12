@@ -519,14 +519,13 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="topbar-title" id="page-title">FCI — Hoy</div>
         <div class="topbar-right">
           <span class="count-tag" id="count-tag">0 órdenes</span>
-          <button class="xlsx-btn" id="senebi-excel-btn" style="display:none" onclick="exportSenebiDiarioXLSX()">⬇ Excel</button>
           <button class="new-btn" id="new-order-btn" onclick="openModal()">+ Nueva Orden</button>
         </div>
       </div>
       <div class="content">
 
         <!-- STATS SENEBI -->
-        <div class="stats-grid" id="senebi-stats-section" style="display:none;grid-template-columns:repeat(5,1fr)">
+        <div class="stats-grid" id="senebi-stats-section" style="display:none">
           <div class="stat-card" id="snb-card-all" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('all',this)">
             <div class="stat-icon c-total">📈</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="snb-st-total">0</div></div>
           </div>
@@ -539,26 +538,16 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
           <div class="stat-card" id="snb-card-exec" style="cursor:pointer;transition:outline 0.15s" onclick="setSenebiEstadoFilter('EJECUTADO',this)">
             <div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="snb-st-exec">0</div></div>
           </div>
-          <div class="stat-card" style="border:1.5px solid rgba(39,174,122,0.3);background:rgba(39,174,122,0.04)">
-            <div class="stat-icon" style="background:rgba(39,174,122,0.12);font-size:18px">💰</div>
-            <div><div class="stat-label">Resultado Día</div><div class="stat-value" id="snb-st-resultado" style="font-size:16px;color:var(--teal-dark)">$0</div></div>
-          </div>
         </div>
 
         <!-- ORDERS VIEW -->
         <div id="orders-view">
           <!-- STATS (admin/supercomercial) -->
-          <div class="stats-grid" id="stats-section" style="display:none;grid-template-columns:repeat(5,1fr)">
-            <div class="stat-card" id="st-card-hoy" style="cursor:pointer;outline:2px solid var(--teal)" onclick="setVistaFutura(false)">
-              <div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div>
-            </div>
+          <div class="stats-grid" id="stats-section" style="display:none">
+            <div class="stat-card"><div class="stat-icon c-total">📋</div><div><div class="stat-label">Total Hoy</div><div class="stat-value sv-total" id="st-total">0</div></div></div>
             <div class="stat-card"><div class="stat-icon c-pend">⏳</div><div><div class="stat-label">Pendiente</div><div class="stat-value sv-pend" id="st-pend">0</div></div></div>
             <div class="stat-card"><div class="stat-icon c-proc">🔄</div><div><div class="stat-label">En Proceso</div><div class="stat-value sv-proc" id="st-proc">0</div></div></div>
             <div class="stat-card"><div class="stat-icon c-exec">✅</div><div><div class="stat-label">Ejecutado</div><div class="stat-value sv-exec" id="st-exec">0</div></div></div>
-            <div class="stat-card" id="st-card-futuras" style="cursor:pointer;border:1.5px dashed var(--border)" onclick="setVistaFutura(true)">
-              <div class="stat-icon" style="background:rgba(45,125,210,0.10);font-size:18px">📅</div>
-              <div><div class="stat-label">Próximas</div><div class="stat-value" id="st-futuras" style="color:#2D7DD2">0</div></div>
-            </div>
           </div>
           <!-- Filtro tipo operacion SENEBI -->
           <div class="filter-bar" id="senebi-op-filter" style="display:none;flex-wrap:wrap;gap:5px;margin-bottom:8px">
@@ -627,7 +616,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </select>
             <select class="filter-select" id="hist-estado" style="width:140px">
               <option value="">Estado: Todos</option>
-              <option>PENDIENTE</option>
+              <option>PENDIENTE</option><option>ENVIADO</option>
               <option>EN PROCESO</option><option>EJECUTADO</option>
             </select>
             <select class="filter-select" id="hist-comercial" style="width:160px">
@@ -817,7 +806,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
+            <label class="form-label">Fecha</label>
             <input class="form-input" id="f-fecha-fci" type="date">
           </div>
         </div>
@@ -825,14 +814,14 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
       <!-- PAGO fields -->
       <div id="pago-fields" style="display:none">
         <div class="form-row">
-          <div class="form-group" id="banco-group">
-            <label class="form-label">Banco</label>
+          <div class="form-group">
+            <label class="form-label">Banco *</label>
             <div class="client-search-wrap" id="banco-wrap">
               <div id="banco-sel-display" style="display:none" class="client-selected-tag" onclick="clearBancoSel()">
                 <span id="banco-sel-text">—</span><span class="client-clear">✕</span>
               </div>
               <input type="text" class="client-search-input" id="banco-search-input"
-                placeholder="Buscar o escribir banco..." oninput="filterBancos();selectedBanco=this.value||null" onfocus="openBancoDd()" autocomplete="off">
+                placeholder="Buscar banco..." oninput="filterBancos()" onfocus="openBancoDd()" autocomplete="off">
               <div class="client-dropdown" id="banco-dd"></div>
             </div>
           </div>
@@ -852,7 +841,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
+            <label class="form-label">Fecha</label>
             <input class="form-input" id="f-fecha-pago" type="date">
           </div>
         </div>
@@ -876,12 +865,12 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Fecha Valor <span style="font-size:9px;color:var(--text-muted)">(aparece en vista diaria)</span></label>
-            <input class="form-input" id="f-fecha-conv" type="date">
-          </div>
-          <div class="form-group">
             <label class="form-label">Fecha de Liquidación</label>
             <input class="form-input" id="f-fecha-liq" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha</label>
+            <input class="form-input" id="f-fecha-conv" type="date">
           </div>
         </div>
       </div>
@@ -1172,7 +1161,7 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Tipo Operación *</label>
-            <select class="form-select" id="f-ppt-tipo" onchange="calcPPT()">
+            <select class="form-select" id="f-ppt-tipo">
               <option value="">--</option>
               <option value="COMPRA">COMPRA</option>
               <option value="VENTA">VENTA</option>
@@ -1502,22 +1491,11 @@ function calcPPT() {
   const ddmm    = tcFalta ? 0 : bruto * tcPesos * 0.0009688;
   const ivaDdmm = ddmm * 0.21;
 
-  const tipoOp = document.getElementById('f-ppt-tipo')?.value || '';
-  const esVenta = tipoOp === 'VENTA';
-  const esCompra = tipoOp === 'COMPRA';
+  // Neto USD = Bruto - Arancel (solo si MEP/Cable)
+  const netoUSD = esUSD ? bruto - arancelMonto : 0;
 
-  // Costos en pesos (siempre positivos)
-  const costoPesos = ivaArancel + ddmm + ivaDdmm;
-
-  // Neto USD (MEP/Cable): Venta = Bruto - Arancel, Compra = Bruto + Arancel
-  const netoUSD = esUSD ? (esVenta ? bruto - arancelMonto : bruto + arancelMonto) : 0;
-
-  // Neto ARS: Venta = Bruto - Arancel - costos pesos, Compra = Bruto + Arancel + costos pesos
-  // Para MEP/Cable el Neto $ son solo los costos en pesos (siempre egresos)
-  let netoARS = 0;
-  if (!esUSD && bruto > 0) {
-    netoARS = esVenta ? bruto - arancelMonto - costoPesos : bruto + arancelMonto + costoPesos;
-  }
+  // Neto $ = IVA Arancel + DDMM + IVA DDMM
+  const netoPesos = ivaArancel + ddmm + ivaDdmm;
 
   // Labels moneda
   const monedaTag = esUSD ? moneda : 'ARS';
@@ -1526,38 +1504,13 @@ function calcPPT() {
   if (elBrutoLbl) elBrutoLbl.textContent = '(' + monedaTag + ')';
   if (elArancLbl) elArancLbl.textContent = '(' + monedaTag + ')';
 
-  // Label neto USD
-  const elNetoUsdLbl = document.getElementById('lbl-ppt-neto-usd');
-  if (elNetoUsdLbl && esUSD) elNetoUsdLbl.textContent = 'Neto ' + moneda;
-
-  // Label neto pesos
-  const elNetoPesosLbl = document.getElementById('lbl-ppt-neto-pesos-lbl');
-
   set('f-ppt-bruto',         bruto > 0        ? fmt2(bruto)         : '');
   set('f-ppt-arancel-monto', arancelMonto > 0 ? fmt2(arancelMonto)  : '');
   set('f-ppt-iva-arancel',   ivaArancel > 0   ? fmt2(ivaArancel)    : '');
   set('f-ppt-ddmm',          ddmm > 0         ? fmt2(ddmm)          : '');
   set('f-ppt-iva-ddmm',      ivaDdmm > 0      ? fmt2(ivaDdmm)       : '');
-
-  if (esUSD) {
-    // MEP/Cable: Neto USD + Neto $ (costos en pesos)
-    const elNetoUsd = document.getElementById('f-ppt-neto-usd');
-    if (elNetoUsd) {
-      elNetoUsd.value = netoUSD !== 0 ? fmt2(Math.abs(netoUSD)) : '';
-      elNetoUsd.style.color = esVenta ? 'var(--teal-dark)' : '#E04B4B';
-    }
-    set('f-ppt-neto-pesos', costoPesos > 0 ? fmt2(costoPesos) : '');
-  } else {
-    // ARS: solo Neto $
-    set('f-ppt-neto-usd', '');
-    const elNetoPesos = document.getElementById('f-ppt-neto-pesos');
-    if (elNetoPesos && netoARS !== 0) {
-      elNetoPesos.value = fmt2(Math.abs(netoARS));
-      elNetoPesos.style.color = esVenta ? 'var(--teal-dark)' : '#E04B4B';
-    } else if (elNetoPesos) {
-      elNetoPesos.value = '';
-    }
-  }
+  set('f-ppt-neto-usd',      esUSD && netoUSD > 0 ? fmt2(netoUSD)   : '');
+  set('f-ppt-neto-pesos',    netoPesos > 0    ? fmt2(netoPesos)      : '');
 }
 
 function resetPptFields() {
@@ -1775,10 +1728,8 @@ function showView(view) {
   const snbStats = document.getElementById('senebi-stats-section');
   const snbOpFilter = document.getElementById('senebi-op-filter');
   const filterBar = document.getElementById('filter-bar');
-  const snbExcelBtn = document.getElementById('senebi-excel-btn');
   if (snbStats) snbStats.style.display = isSenebi ? 'grid' : 'none';
   if (snbOpFilter) snbOpFilter.style.display = isSenebi ? 'flex' : 'none';
-  if (snbExcelBtn) snbExcelBtn.style.display = isSenebi ? 'inline-flex' : 'none';
   // Ocultar chips de estado para SENEBI, mostrar para el resto
   if (filterBar) filterBar.style.display = isSenebi ? 'none' : 'flex';
   if (isSenebi) {
@@ -1794,7 +1745,6 @@ function showView(view) {
   }
 
   setModalFields(view);
-  currentVistaFutura = false;
   renderTable();
   // Actualizar stats del módulo activo
   if (!isAdmin && !isHist && view !== 'senebi-hoy') updateModuleStats(view);
@@ -1828,18 +1778,16 @@ function onTipoChange() {
     showFields('pago');
     const bancoWrap = document.getElementById('banco-wrap');
     const isCheque = (t === 'ECHEQ' || t === 'CHEQUE FISICO');
-    const monedaPago = document.getElementById('f-moneda-pago');
-    const bancoGroup = document.getElementById('banco-group');
-    if (bancoGroup) bancoGroup.style.display = isCheque ? 'none' : '';
+    if (bancoWrap) {
+      bancoWrap.style.opacity = isCheque ? '0.4' : '1';
+      bancoWrap.style.pointerEvents = isCheque ? 'none' : '';
+    }
     if (isCheque) {
       selectedBanco = null;
       const bsd = document.getElementById('banco-sel-display');
       const bsi = document.getElementById('banco-search-input');
       if (bsd) bsd.style.display = 'none';
       if (bsi) { bsi.style.display = 'block'; bsi.value = ''; }
-      if (monedaPago) monedaPago.value = 'ARS';
-    } else {
-      if (monedaPago && !monedaPago.value) monedaPago.value = '';
     }
   }
   else if (t === 'CONVERSION') showFields('conv');
@@ -1899,29 +1847,14 @@ function setFilter(f, el) {
 // ═══════════════════════════════════════════════════
 //  TABLE
 // ═══════════════════════════════════════════════════
-let currentVistaFutura = false;
-
-function setVistaFutura(futura) {
-  currentVistaFutura = futura;
-  const cardHoy     = document.getElementById('st-card-hoy');
-  const cardFuturas = document.getElementById('st-card-futuras');
-  if (cardHoy)     cardHoy.style.outline     = futura ? 'none' : '2px solid var(--teal)';
-  if (cardFuturas) cardFuturas.style.outline  = futura ? '2px solid #2D7DD2' : 'none';
-  if (cardFuturas) cardFuturas.style.borderStyle = futura ? 'solid' : 'dashed';
-  if (cardFuturas) cardFuturas.style.borderColor = futura ? '#2D7DD2' : 'var(--border)';
-  renderTable();
-}
-
 function updateModuleStats(view) {
   const tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[view]||'';
-  const t = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha)===TODAY);
-  const futuras = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha) > TODAY);
+  const t = orders.filter(o => o.tab===tab && o.fecha===TODAY);
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('st-total', t.length);
   set('st-pend',  t.filter(o=>o.estado==='PENDIENTE').length);
   set('st-proc',  t.filter(o=>o.estado==='EN PROCESO').length);
   set('st-exec',  t.filter(o=>o.estado==='EJECUTADO').length);
-  set('st-futuras', futuras.length);
 }
 
 function getTabName(view) {
@@ -1930,12 +1863,7 @@ function getTabName(view) {
 
 function getTodayOrders() {
   const tab = getTabName(currentView);
-  let rows;
-  if (currentVistaFutura) {
-    rows = orders.filter(o => o.tab === tab && (o.fechaValor||o.fecha) > TODAY);
-  } else {
-    rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
-  }
+  let rows = orders.filter(o => o.tab === tab && o.fecha === TODAY);
   if (!currentUser.isAdmin) {
     if (isSuperComercial()) {
       // Gaston/Julian see their own orders AND orders they created for others
@@ -1972,15 +1900,13 @@ function toggleLiquidez(inputId, btnId) {
     input.readOnly = false;
     input.style.background = '';
     input.style.color = '';
-    if (btn) { btn.style.background='var(--surface2)'; btn.style.color='var(--text-muted)'; btn.style.borderColor='var(--border)'; btn.textContent='Liquidez'; btn.style.fontWeight='700'; }
-    input.style.fontWeight = '';
+    if (btn) { btn.style.background='var(--surface2)'; btn.style.color='var(--text-muted)'; btn.style.borderColor='var(--border)'; }
   } else {
     input.value = 'Liquidez';
     input.readOnly = true;
-    input.style.background = '#EAF6F0';
+    input.style.background = '#F4F6FB';
     input.style.color = 'var(--teal-dark)';
-    input.style.fontWeight = '800';
-    if (btn) { btn.style.background='var(--navy)'; btn.style.color='#fff'; btn.style.borderColor='var(--navy)'; btn.textContent='✓ Liquidez'; btn.style.fontWeight='800'; }
+    if (btn) { btn.style.background='var(--teal)'; btn.style.color='#fff'; btn.style.borderColor='var(--teal)'; }
   }
 }
 
@@ -2008,48 +1934,14 @@ function setSenebiOpFilter(op, el) {
   renderTable();
 }
 
-function updateSenebiChipBadges() {
-  // Contar órdenes del día por tipo de operación
-  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
-  const countByOp = {};
-  hoy.forEach(o => { if(o.senebiOperacion) countByOp[o.senebiOperacion] = (countByOp[o.senebiOperacion]||0)+1; });
-  // Actualizar cada chip
-  document.querySelectorAll('#senebi-op-filter .filter-chip').forEach(function(chip) {
-    const op = chip.dataset.snbop;
-    const count = countByOp[op] || 0;
-    // Remover badge anterior
-    const prev = chip.querySelector('.chip-badge');
-    if (prev) prev.remove();
-    if (count > 0) {
-      const badge = document.createElement('span');
-      badge.className = 'chip-badge';
-      badge.textContent = count;
-      badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:800;margin-left:5px;vertical-align:middle';
-      chip.appendChild(badge);
-      chip.style.borderColor = 'var(--teal)';
-    } else {
-      chip.style.borderColor = '';
-    }
-  });
-}
-
 function updateSenebiStats() {
-  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
+  const hoy = orders.filter(o => o.tab === 'senebi' && o.fecha === TODAY);
   const el = id => document.getElementById(id);
   if (!el('snb-st-total')) return;
   el('snb-st-total').textContent = hoy.length;
   el('snb-st-pend').textContent  = hoy.filter(o => o.estado === 'PENDIENTE').length;
   el('snb-st-proc').textContent  = hoy.filter(o => o.estado === 'EN PROCESO').length;
   el('snb-st-exec').textContent  = hoy.filter(o => o.estado === 'EJECUTADO').length;
-  // Resultado del día: suma de todos los resultados
-  const parseNum = v => parseFloat((v||'0').replace(/\./g,'').replace(',','.')) || 0;
-  const totalRes = hoy.reduce((acc, o) => acc + parseNum(o.resultado), 0);
-  const elRes = el('snb-st-resultado');
-  if (elRes) {
-    elRes.textContent = (totalRes >= 0 ? '$' : '-$') + Math.abs(totalRes).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    elRes.style.color = totalRes >= 0 ? 'var(--teal-dark)' : '#E04B4B';
-  }
-  updateSenebiChipBadges();
 }
 
 // Etiquetas de monto segun operacion
@@ -2445,7 +2337,7 @@ function editOrderData(o) {
   onTipoChange();
   if (o.tab==='fci') { set('f-importe-fci',o.importe); set('f-fondo-fci',o.fondo); set('f-moneda-fci',o.monedaFci||o.moneda); }
   else if (o.tab==='pagos') { set('f-importe',o.importe); set('f-banco',o.banco); set('f-moneda',o.moneda||o.monedaFci); set('f-tipo-pago',o.tipoPago); }
-  else if (o.tab==='conv') { set('f-importe-conv',o.importe); set('f-moneda-conv',o.monedaConv); set('f-fecha-liq',o.fechaLiq); set('f-fecha-conv',o.fechaValor||o.fecha); }
+  else if (o.tab==='conv') { set('f-importe-conv',o.importe); set('f-moneda-conv',o.monedaConv); set('f-fecha-liq',o.fechaLiq); set('f-fecha-orden',o.fechaOrden); }
   else if (o.tab==='lic') { set('f-denominacion',o.denominacion); set('f-precio-tasa',o.precioTasa); set('f-cantidad-lic',o.cantidad); set('f-moneda-lic',o.monedaLic); }
   else if (o.tab==='senebi') {
     var selOp = document.getElementById('f-senebi-operacion');
@@ -2519,7 +2411,7 @@ function editOrder(id) {
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
       document.getElementById('f-importe-fci').value=o.importe||'';
-      document.getElementById('f-fecha-fci').value=o.fechaValor||o.fecha||'';
+      document.getElementById('f-fecha-fci').value=o.fecha||'';
     } else if (o.tab==='pagos') {
       selectedBanco=o.banco||'';
       document.getElementById('banco-sel-text').textContent=o.banco||'';
@@ -2527,12 +2419,12 @@ function editOrder(id) {
       document.getElementById('banco-search-input').style.display='none';
       document.getElementById('f-moneda-pago').value=o.moneda||'';
       document.getElementById('f-importe-pago').value=o.importe||'';
-      document.getElementById('f-fecha-pago').value=o.fechaValor||o.fecha||'';
+      document.getElementById('f-fecha-pago').value=o.fecha||'';
     } else if (o.tab==='conv') {
       document.getElementById('f-importe-conv').value=o.importe||'';
       document.getElementById('f-moneda-conv').value=o.monedaConv||'';
       document.getElementById('f-fecha-liq').value=o.fechaLiq||'';
-      document.getElementById('f-fecha-conv').value=o.fechaValor||o.fecha||'';
+      document.getElementById('f-fecha-conv').value=o.fecha||'';
     } else if (o.tab==='senebi') {
       // Restaurar comitente
       selectedSenebiCompra = {comitente:o.comitenteCompra||'', nombre:o.nombreCompra||''};
@@ -2650,9 +2542,9 @@ function renderTable() {
   }
   if (tab==='ppt')    cols.push('Operación','Ticker','Moneda','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $');
   if (tab!=='lic' && tab!=='senebi' && tab!=='ppt') cols.push('Importe');
-  cols.push('Prioridad','Estado');
+  cols.push('Prioridad','Estado','Acciones');
   if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
-  cols.push('Acciones');
+  cols.push('');
 
   const tw = document.getElementById('main-table-wrap');
   if(tw) { if(tab==='senebi') tw.classList.add('compact'); else tw.classList.remove('compact'); }
@@ -2665,7 +2557,7 @@ function renderTable() {
   }
 
   body.innerHTML = rows.map((o, idx) => { o.nro = idx + 1;
-    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate','PAGO RESCATE':'t-pago',PAGO:'t-pago',ECHEQ:'t-pago','CHEQUE FISICO':'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
+    const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
     const sKey = 's-'+(o.estado||'').replace(' ','-');
     const pClass = o.prioridad ? 'p-'+o.prioridad : '';
     const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor;
@@ -2761,7 +2653,7 @@ function renderTable() {
     const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
     let statusCell = canChange
       ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
-           ${['PENDIENTE','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
+           ${['PENDIENTE','ENVIADO','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
 
@@ -2780,7 +2672,7 @@ function renderTable() {
       <td data-tip="${o.prioridad||''}">${o.prioridad?`<span class="prio-badge ${pClass}">${o.prioridad}</span>`:'—'}</td>
       ${statusCell}
       ${comercialCol}
-      <td style="width:160px;min-width:160px;white-space:nowrap">${getBtns(o)}</td>
+      <td style="min-width:160px;white-space:nowrap">${getBtns(o)}</td>
     </tr>`;
   }).join('');
 
@@ -3142,7 +3034,7 @@ function renderHistorial() {
     cols = ['ID','Fecha','Tipo','Comitente','Cliente','Detalle','Importe','Estado'];
     if (showComercial) cols.push('Comercial');
     buildRow = o => {
-      const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate','PAGO RESCATE':'t-pago',PAGO:'t-pago',ECHEQ:'t-pago','CHEQUE FISICO':'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
+      const tipoClass = {SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate',PAGO:'t-pago',CONVERSION:'t-conversion',LICITACION:'t-licitacion',SENEBI:'t-senebi',PPT:'t-ppt'}[o.tipo]||'';
       const sKey = 's-'+(o.estado||'').replace(' ','-');
       const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
       let detalle = o.fondo || o.banco || o.monedaConv || '—';
@@ -3182,33 +3074,6 @@ function renderHistorial() {
   window._histExportRows = rows;
   window._histExportBuildCsvRow = buildCsvRow;
   window._histExportCols = cols;
-}
-
-function exportSenebiDiarioXLSX() {
-  const rows = getTodayOrders();
-  if (!rows.length) { showToast('No hay órdenes SENEBI hoy'); return; }
-  const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
-  const cols = ['ID','Fecha','Comitente','Nombre','Operación','Método','Plazo','Ticker ARS','Ticker USD','Nominales','P.ARS','P.USD','P.PPT','TC / TC Imp.','Monto ARS','Monto USD','Monto PPT','Resultado','Estado','Comercial'];
-  let csv = cols.map(c=>'"'+c+'"').join(';') + '\n';
-  rows.forEach(o => {
-    const opLabel = opLabels[o.senebiOperacion]||o.senebiOperacion||'';
-    const metodo  = o.senebiTipo==='mesa'?'Con Mesa':o.senebiTipo==='directo'?'Directo':o.senebiTipo==='instrumento'?'Instrumento':'';
-    const tcShow  = o.senebiTipo==='mesa'?(o.tcCliente||''):o.senebiTipo==='instrumento'?(o.instPrecioMesa||''):(o.tcImplicito||'');
-    const montoArs= o.senebiTipo==='mesa'?(o.arsCliente||''):o.senebiTipo==='instrumento'?(o.instMontoMesa||''):(o.montoArs||'');
-    const montoUsd= o.senebiTipo==='mesa'?(o.montoSenebi||''):o.senebiTipo==='instrumento'?(o.instMontoCliente||''):(o.montoUsd||'');
-    const tickerA = o.senebiTipo==='instrumento'?(o.instTicker||''):(o.tickerArs||'');
-    const noms    = o.senebiTipo==='instrumento'?(o.instNominales||''):(o.nominales||'');
-    const pArs    = o.senebiTipo==='instrumento'?(o.instPrecioCliente||''):(o.precioArs||'');
-    const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor||'';
-    const cells   = [o.id,o.fecha,o.comitenteCompra||'',o.nombreCompra||'',opLabel,metodo,o.plazo||o.instPlazo||'',tickerA,o.tickerUsd||'',noms,pArs,o.precioUsd||'',o.precioPpt||o.precioPptMep||o.precioPptCable||'',tcShow,montoArs,montoUsd,o.montoPpt||'',o.resultado||'',o.estado,comName];
-    csv += cells.map(v=>'"'+(v||'').toString().replace(/"/g,'""')+'"').join(';') + '\n';
-  });
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'senebi-'+TODAY+'.csv';
-  a.click();
-  showToast('✓ Exportando SENEBI...');
 }
 
 function exportHistorialXLSX() {
@@ -3475,10 +3340,6 @@ function submitOrder() {
   const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON',lic:'LIC',senebi:'SNB'};
   const prefix = prefixes[tab]||'ORD';
   const id = `${prefix}-${String(orderCounter).padStart(3,'0')}`;
-  const fechaValor = tab==='fci'   ? document.getElementById('f-fecha-fci').value
-              : tab==='pagos' ? document.getElementById('f-fecha-pago').value
-              : tab==='conv'  ? document.getElementById('f-fecha-conv').value
-              : '';
   const fecha = tab==='fci'   ? document.getElementById('f-fecha-fci').value
               : tab==='pagos' ? document.getElementById('f-fecha-pago').value
               : tab==='conv'  ? document.getElementById('f-fecha-conv').value
@@ -3494,8 +3355,7 @@ function submitOrder() {
     creadaPor: currentUser.id,
     estado: 'PENDIENTE',
     prioridad: document.getElementById('f-prioridad').value || 'MEDIO',
-    fecha: TODAY,
-    fechaValor: fechaValor || TODAY,
+    fecha: fecha || TODAY,
     comentarios: document.getElementById('f-comentarios').value,
     importe: tab==='fci'   ? document.getElementById('f-importe-fci').value
            : tab==='pagos' ? document.getElementById('f-importe-pago').value
@@ -3579,7 +3439,9 @@ function submitOrder() {
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && currentSenebiTipo==='instrumento' && !document.getElementById('f-inst-ticker').value.trim()) { showToast('⚠ Ingresá el ticker del instrumento'); return; }
   if (tab==='pagos' && !newOrder.moneda) { showToast('⚠ Seleccioná la moneda'); return; }
-  if (tab==='pagos' && newOrder.moneda !== 'CABLE' && !newOrder.banco) { showToast('⚠ Completá el banco'); return; }
+  var tipoOrdenSel = document.getElementById('f-tipo')?.value || '';
+  var esChequeOrEcheq = (tipoOrdenSel === 'ECHEQ' || tipoOrdenSel === 'CHEQUE FISICO');
+  if (tab==='pagos' && !esChequeOrEcheq && newOrder.moneda !== 'CABLE' && !newOrder.banco) { showToast('⚠ Completá el banco'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && !selectedSenebiCompra) { showToast('⚠ Selecciona el comitente'); return; }
   if (tab==='senebi' && !document.getElementById('f-senebi-operacion').value) { showToast('⚠ Selecciona el tipo de operacion'); return; }
@@ -3931,15 +3793,13 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
     // Actualizar stats generales para todos los usuarios
     if (currentView !== 'historial' && currentView !== 'admin' && currentView !== 'senebi-hoy') {
       var tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[currentView]||'';
-      var t = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)===TODAY;});
-      var futuras = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)>TODAY;});
+      var t = orders.filter(function(o){return o.tab===tab && o.fecha===TODAY;});
       var el=document.getElementById('st-total');
       if(el){
         document.getElementById('st-total').textContent=t.length;
         document.getElementById('st-pend').textContent=t.filter(function(o){return o.estado==='PENDIENTE';}).length;
         document.getElementById('st-proc').textContent=t.filter(function(o){return o.estado==='EN PROCESO';}).length;
         document.getElementById('st-exec').textContent=t.filter(function(o){return o.estado==='EJECUTADO';}).length;
-        var elF=document.getElementById('st-futuras'); if(elF) elF.textContent=futuras.length;
       }
     }
   }
