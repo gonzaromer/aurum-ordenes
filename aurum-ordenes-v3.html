@@ -2421,18 +2421,31 @@ function showComentario(id) {
     // Titulo
     var titulo = document.getElementById('modal-title');
     if (titulo) titulo.textContent = 'Ver Orden — ' + (o.tipo||'');
-    // Deshabilitar todos los campos
     var modal = document.getElementById('modal');
     if (!modal) return;
-    modal.querySelectorAll('input, select, textarea').forEach(function(el) {
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
-      el.style.opacity = '0.9';
-      el.style.cursor = 'default';
-    });
-    // Footer solo Cerrar
-    var footer = modal.querySelector('.modal-footer');
-    if (footer) footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cerrar</button>';
+    // Esperar a que terminen los setTimeout internos de editOrderData (mesa/directo)
+    setTimeout(function() {
+      // Deshabilitar todos los inputs, selects y textareas
+      modal.querySelectorAll('input, select, textarea').forEach(function(el) {
+        el.disabled = true;
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.9';
+        el.style.cursor = 'default';
+      });
+      // Bloquear toda interacción dentro del modal: botones de selección (cliente, banco, fondo, comitente, tipo mesa/directo, etc.)
+      modal.querySelectorAll('button, [onclick]').forEach(function(el) {
+        if (el.closest('.modal-footer')) return; // no tocar footer
+        el.style.pointerEvents = 'none';
+        el.disabled = true;
+      });
+      // Bloquear cualquier dropdown abierto y overlay clickeable
+      modal.querySelectorAll('.client-dropdown, .client-search-wrap, .client-selected-tag').forEach(function(el) {
+        el.style.pointerEvents = 'none';
+      });
+      // Footer solo Cerrar
+      var footer = modal.querySelector('.modal-footer');
+      if (footer) footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cerrar</button>';
+    }, 60);
   }, 80);
 }
 
@@ -3292,11 +3305,14 @@ function closeModal() {
     // Rehabilitar campos
     var modal = document.getElementById('modal');
     if (modal) {
-      modal.querySelectorAll('input, select, textarea').forEach(function(el) {
+      modal.querySelectorAll('input, select, textarea, button, [onclick]').forEach(function(el) {
         el.disabled = false;
         el.style.pointerEvents = '';
         el.style.opacity = '';
         el.style.cursor = '';
+      });
+      modal.querySelectorAll('.client-dropdown, .client-search-wrap, .client-selected-tag').forEach(function(el) {
+        el.style.pointerEvents = '';
       });
     }
   }
