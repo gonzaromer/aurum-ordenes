@@ -1344,10 +1344,19 @@ let comerciales = [
 
 // ── PERMISSION HELPERS ──
 function isAdmin() { return currentUser && currentUser.isAdmin; }
-function isSuperComercial() { return currentUser && (currentUser.id==='gaston' || currentUser.id==='julian'); }
-function canEditAnyOrder() { return isAdmin() || isSuperComercial(); }
-function canChangeStatus(tab) { return isAdmin() || (isSuperComercial() && tab==='senebi'); }
-function canAssignComercial() { return isAdmin() || isSuperComercial(); }
+// Middle Office: Gaston y Julian, con potestad ampliada SOLO en SENEBI, PPT y Licitaciones
+const MIDDLE_OFFICE_MODULES = ['senebi','ppt','lic'];
+function isMiddleOffice() { return currentUser && (currentUser.id==='gaston' || currentUser.id==='julian'); }
+// isSuperComercial(tab): true si es Middle Office Y el modulo (tab) esta en su ambito
+// Si no se pasa tab, devuelve true si es Middle Office (para checks generales de UI)
+function isSuperComercial(tab) {
+  if (!isMiddleOffice()) return false;
+  if (tab === undefined) return true;
+  return MIDDLE_OFFICE_MODULES.includes(tab);
+}
+function canEditAnyOrder(tab) { return isAdmin() || isSuperComercial(tab); }
+function canChangeStatus(tab) { return isAdmin() || isSuperComercial(tab); }
+function canAssignComercial(tab) { return isAdmin() || isSuperComercial(tab); }
 
 function initPasswords() {
   comerciales.forEach(function(c) {
@@ -1903,10 +1912,23 @@ function setVistaFutura(futura) {
   renderTable();
 }
 
+function filterByUser(rows, tab) {
+  if (!currentUser) return rows;
+  if (currentUser.isAdmin) return rows;
+  // Middle Office (Gaston/Julian) ven TODAS las ordenes en sus modulos (senebi/ppt/lic)
+  if (isSuperComercial(tab)) return rows;
+  // En el resto de los modulos, Middle Office actua como comercial regular
+  if (isMiddleOffice()) {
+    return rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
+  }
+  return rows.filter(o => o.solicitadoPor === currentUser.id);
+}
+
 function updateModuleStats(view) {
   const tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[view]||'';
-  const t = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha)===TODAY);
-  const futuras = orders.filter(o => o.tab===tab && (o.fechaValor||o.fecha) > TODAY);
+  const myOrders = filterByUser(orders, tab);
+  const t = myOrders.filter(o => o.tab===tab && (o.fechaValor||o.fecha)===TODAY);
+  const futuras = myOrders.filter(o => o.tab===tab && (o.fechaValor||o.fecha) > TODAY);
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('st-total', t.length);
   set('st-pend',  t.filter(o=>o.estado==='PENDIENTE').length);
@@ -1927,14 +1949,7 @@ function getTodayOrders() {
   } else {
     rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
   }
-  if (!currentUser.isAdmin) {
-    if (isSuperComercial()) {
-      // Gaston/Julian see their own orders AND orders they created for others
-      rows = rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
-    } else {
-      rows = rows.filter(o => o.solicitadoPor === currentUser.id);
-    }
-  }
+  rows = filterByUser(rows, tab);
   // Para SENEBI usar filtros propios, para el resto usar currentFilter
   if (tab === 'senebi') {
     if (currentSenebiEstadoFilter !== 'all') rows = rows.filter(o => o.estado === currentSenebiEstadoFilter);
@@ -2000,7 +2015,7 @@ function setSenebiOpFilter(op, el) {
 }
 
 function updateSenebiChipBadges() {
-  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
+  const hoy = filterByUser(orders, 'senebi').filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
   const countByOp = {};
   hoy.forEach(o => { if(o.senebiOperacion) countByOp[o.senebiOperacion] = (countByOp[o.senebiOperacion]||0)+1; });
   document.querySelectorAll('#senebi-op-filter .filter-chip').forEach(function(chip) {
@@ -2022,7 +2037,7 @@ function updateSenebiChipBadges() {
 }
 
 function updateSenebiStats() {
-  const hoy = orders.filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
+  const hoy = filterByUser(orders, 'senebi').filter(o => o.tab === 'senebi' && (o.fechaValor||o.fecha) === TODAY);
   const el = id => document.getElementById(id);
   if (!el('snb-st-total')) return;
   el('snb-st-total').textContent = hoy.length;
@@ -2375,9 +2390,9 @@ function getBtns(o) {
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
   // Admin puede todo
   if (isAdmin()) return vBtn+eBtn+dBtn;
-  // Julián y Gastón: solo SENEBI sin restricción, el resto solo si PENDIENTE
-  if (isSuperComercial()) {
-    if (o.tab === 'senebi') return vBtn+eBtn+dBtn;
+  // Middle Office (Gaston/Julian): sin restricción en SENEBI/PPT/Licitaciones, el resto solo si PENDIENTE
+  if (isSuperComercial(o.tab)) return vBtn+eBtn+dBtn;
+  if (isMiddleOffice()) {
     if (o.estado === 'PENDIENTE') return vBtn+eBtn+dBtn;
     return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
   }
@@ -2484,7 +2499,7 @@ function deleteOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Permission check
-  if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés eliminar órdenes en estado PENDIENTE'); return; }
+  if (!isAdmin() && !isSuperComercial(o.tab) && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés eliminar órdenes en estado PENDIENTE'); return; }
   if (o.fbKey) { window.__db.ref('ordenes/'+o.fbKey).remove().then(()=>showToast('Orden eliminada')); }
   else { orders=orders.filter(x=>x.id!==id); renderTable(); showToast('Orden eliminada'); }
 }
@@ -2493,7 +2508,7 @@ function editOrder(id) {
   const o = orders.find(x=>x.id===id||x.fbKey===id);
   if (!o) return;
   // Permission check
-  if (!isAdmin() && !(isSuperComercial() && o.tab==='senebi') && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
+  if (!isAdmin() && !isSuperComercial(o.tab) && o.estado !== 'PENDIENTE') { showToast('⚠ Solo podés editar órdenes en estado PENDIENTE'); return; }
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
@@ -2630,7 +2645,7 @@ function renderTable() {
   if (tab==='ppt')    cols.push('Operación','Ticker','Moneda','VN','Precio','Bruto','Arancel','IVA Aran.','DDMM','IVA DDMM','Neto USD','Neto $');
   if (tab!=='lic' && tab!=='senebi' && tab!=='ppt') cols.push('Importe');
   cols.push('Prioridad','Estado');
-  if (currentUser.isAdmin || isSuperComercial()) cols.push('Comercial');
+  if (currentUser.isAdmin || isSuperComercial(tab)) cols.push('Comercial');
   cols.push('Acciones');
 
   const tw = document.getElementById('main-table-wrap');
@@ -2737,15 +2752,15 @@ function renderTable() {
       }
     }
 
-    const canChange = currentUser.isAdmin || (isSuperComercial() && o.tab==='senebi');
+    const canChange = currentUser.isAdmin || isSuperComercial(o.tab);
     let statusCell = canChange
       ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
-           ${['PENDIENTE','ENVIADO','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
+           ${['PENDIENTE','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
 
     // Show comercial column for admin AND superComercial
-    const showComercialCol = currentUser.isAdmin || isSuperComercial();
+    const showComercialCol = currentUser.isAdmin || isSuperComercial(o.tab);
     const comercialCol = showComercialCol ? `<td style="font-size:12px;color:var(--text-muted);font-weight:600">${comName}</td>` : '';
 
     return `<tr>
@@ -2786,16 +2801,12 @@ function updateStatus(fbKey, val) {
 // ═══════════════════════════════════════════════════
 //  HISTORIAL
 // ═══════════════════════════════════════════════════
-function getHistBaseRows() {
-  // Filas filtradas por usuario y fechas (sin filtro de tipo)
+function getHistBaseRows(tab) {
+  // Filas filtradas por permisos de usuario (segun modulo), fechas y comercial
   const from     = document.getElementById('hist-from').value;
   const to       = document.getElementById('hist-to').value;
   const comercial= document.getElementById('hist-comercial')?.value || '';
-  let rows = [...orders];
-  if (!currentUser.isAdmin) {
-    if (isSuperComercial()) rows = rows.filter(o => o.solicitadoPor===currentUser.id || o.creadaPor===currentUser.id);
-    else rows = rows.filter(o => o.solicitadoPor===currentUser.id);
-  }
+  let rows = filterByUser([...orders], tab);
   if (from) rows = rows.filter(o => o.fecha >= from);
   if (to)   rows = rows.filter(o => o.fecha <= to);
   if (comercial) rows = rows.filter(o => o.solicitadoPor === comercial);
@@ -2803,16 +2814,16 @@ function getHistBaseRows() {
 }
 
 function updateHistStats() {
-  const rows = getHistBaseRows();
-  const count = tab => rows.filter(o => o.tab === tab).length;
+  const count = tab => getHistBaseRows(tab).filter(o => o.tab === tab).length;
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  set('hst-total', rows.length);
-  set('hst-fci',   count('fci'));
-  set('hst-pagos', count('pagos'));
-  set('hst-conv',  count('conv'));
-  set('hst-lic',   count('lic'));
-  set('hst-senebi',count('senebi'));
-  set('hst-ppt',   count('ppt'));
+  const cFci=count('fci'), cPagos=count('pagos'), cConv=count('conv'), cLic=count('lic'), cSenebi=count('senebi'), cPpt=count('ppt');
+  set('hst-total', cFci+cPagos+cConv+cLic+cSenebi+cPpt);
+  set('hst-fci',   cFci);
+  set('hst-pagos', cPagos);
+  set('hst-conv',  cConv);
+  set('hst-lic',   cLic);
+  set('hst-senebi',cSenebi);
+  set('hst-ppt',   cPpt);
   // Resaltar el módulo activo
   const tipoActivo = (document.getElementById('hist-tipo')?.value||'').toLowerCase();
   const tabMap = {fci:'hst-fci',pagos:'hst-pagos',conversiones:'hst-conv',licitaciones:'hst-lic',senebi:'hst-senebi',ppt:'hst-ppt'};
@@ -2887,25 +2898,14 @@ function renderHistorial() {
   if (tableWrap) tableWrap.style.display = 'block';
   if (emptyMsg)  emptyMsg.style.display  = 'none';
 
-  let rows = [...orders];
-  if (!currentUser.isAdmin) {
-    if (isSuperComercial()) {
-      rows = rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
-    } else {
-      rows = rows.filter(o => o.solicitadoPor === currentUser.id);
-    }
-  }
+  // Mapear tipo seleccionado a tab para chequeo de permisos
+  const tipoToTab = {fci:'fci',pagos:'pagos',conversiones:'conv',licitaciones:'lic',senebi:'senebi',ppt:'ppt'};
+  const filterTab = tipoToTab[tipo]; // undefined si tipo='' (sin selección)
+
+  let rows = filterByUser([...orders], filterTab);
   if (from)     rows = rows.filter(o => o.fecha >= from);
   if (to)       rows = rows.filter(o => o.fecha <= to);
-  if (tipo)     rows = rows.filter(o => {
-    if (tipo==='fci') return o.tab==='fci';
-    if (tipo==='pagos') return o.tab==='pagos';
-    if (tipo==='conversiones') return o.tab==='conv';
-    if (tipo==='licitaciones') return o.tab==='lic';
-    if (tipo==='senebi') return o.tab==='senebi';
-    if (tipo==='ppt') return o.tab==='ppt';
-    return true;
-  });
+  if (tipo)     rows = rows.filter(o => o.tab === filterTab);
   // Subfiltro tipo operacion SENEBI
   if (tipo === 'senebi' && currentHistSenebiOp !== 'all') {
     rows = rows.filter(o => o.senebiOperacion === currentHistSenebiOp);
@@ -2917,7 +2917,7 @@ function renderHistorial() {
   // Asignar número correlativo para display
   rows.forEach((o, i) => { o._nro = i + 1; });
 
-  const showComercial = currentUser.isAdmin || isSuperComercial();
+  const showComercial = currentUser.isAdmin || isSuperComercial(filterTab);
 
   // ── Definir columnas según tipo filtrado ──
   let cols, buildRow, buildCsvRow;
@@ -3215,7 +3215,7 @@ function openModal() {
   // Show/hide asignar comercial field
   const asignarRow = document.getElementById('asignar-row');
   const asignarSel = document.getElementById('f-asignar-comercial');
-  if (canAssignComercial()) {
+  if (canAssignComercial(getTabName(currentView))) {
     asignarRow.style.display = 'block';
     asignarSel.innerHTML = '<option value="">— Cargar como propio —</option>';
     comerciales.filter(c=>!c.isAdmin).forEach(function(c) {
@@ -3465,7 +3465,7 @@ function submitOrder() {
     fechaValor: fechaValor || TODAY,
     comitente: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : selectedClient.comitente,
     cliente:   tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : selectedClient.nombre,
-    solicitadoPor: (canAssignComercial() && document.getElementById('f-asignar-comercial')?.value)
+    solicitadoPor: (canAssignComercial(tab) && document.getElementById('f-asignar-comercial')?.value)
                    ? document.getElementById('f-asignar-comercial').value
                    : currentUser.id,
     creadaPor: currentUser.id,
@@ -3908,8 +3908,9 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
     // Actualizar stats generales para todos los usuarios
     if (currentView !== 'historial' && currentView !== 'admin' && currentView !== 'senebi-hoy') {
       var tab = {fci:'fci','fci-hoy':'fci',pagos:'pagos','pagos-hoy':'pagos',conv:'conv','conv-hoy':'conv',lic:'lic','lic-hoy':'lic',ppt:'ppt','ppt-hoy':'ppt'}[currentView]||'';
-      var t = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)===TODAY;});
-      var futuras = orders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)>TODAY;});
+      var myOrders = filterByUser(orders, tab);
+      var t = myOrders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)===TODAY;});
+      var futuras = myOrders.filter(function(o){return o.tab===tab && (o.fechaValor||o.fecha)>TODAY;});
       var el=document.getElementById('st-total');
       if(el){
         document.getElementById('st-total').textContent=t.length;
