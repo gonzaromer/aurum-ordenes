@@ -2443,15 +2443,29 @@ function loadOrderIntoModal(o, id, isViewMode) {
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
-      document.getElementById('f-importe-fci').value=o.importe||'';
+      // Restaurar Fondo via selectFondo (dropdown custom)
+      if (o.fondo) selectFondo(o.fondo);
+      // Restaurar Moneda
+      var mfci = document.getElementById('f-moneda-fci');
+      if (mfci) mfci.value = o.moneda || o.monedaFci || '';
+      // Restaurar Importe o Liquidez
+      if (o.importe === 'Liquidez') {
+        toggleLiquidez('f-importe-fci','btn-liq-fci');
+      } else {
+        document.getElementById('f-importe-fci').value = o.importe||'';
+      }
       document.getElementById('f-fecha-fci').value=o.fechaValor||o.fecha||'';
     } else if (o.tab==='pagos') {
       selectedBanco=o.banco||'';
-      document.getElementById('banco-sel-text').textContent=o.banco||'';
-      document.getElementById('banco-sel-display').style.display='flex';
-      document.getElementById('banco-search-input').style.display='none';
+      var bst=document.getElementById('banco-sel-text'); if(bst) bst.textContent=o.banco||'';
+      var bsd=document.getElementById('banco-sel-display'); if(bsd) bsd.style.display= o.banco ? 'flex' : 'none';
+      var bsi=document.getElementById('banco-search-input'); if(bsi) bsi.style.display= o.banco ? 'none' : 'block';
       document.getElementById('f-moneda-pago').value=o.moneda||'';
-      document.getElementById('f-importe-pago').value=o.importe||'';
+      if (o.importe === 'Liquidez') {
+        toggleLiquidez('f-importe-pago','btn-liq-pago');
+      } else {
+        var ip=document.getElementById('f-importe-pago'); if(ip) ip.value=o.importe||'';
+      }
       document.getElementById('f-fecha-pago').value=o.fechaValor||o.fecha||'';
     } else if (o.tab==='conv') {
       document.getElementById('f-importe-conv').value=o.importe||'';
