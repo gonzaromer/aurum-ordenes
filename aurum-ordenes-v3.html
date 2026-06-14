@@ -2778,6 +2778,9 @@ function getHistBaseRows(tab) {
 }
 
 function updateHistStats() {
+  // Actualizar badges chips SENEBI si el subfiltro está visible
+  const snbFilt = document.getElementById('hist-senebi-op-filter');
+  if (snbFilt && snbFilt.style.display !== 'none') updateHistSenebiChipBadges();
   const count = tab => getHistBaseRows(tab).filter(o => o.tab === tab).length;
   const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   const cFci=count('fci'), cPagos=count('pagos'), cConv=count('conv'), cLic=count('lic'), cSenebi=count('senebi'), cPpt=count('ppt');
@@ -2800,6 +2803,30 @@ function updateHistStats() {
 
 let currentHistSenebiOp = 'all';
 
+function updateHistSenebiChipBadges() {
+  // Contar operaciones SENEBI según filtros de fecha actuales
+  const rows = getHistBaseRows('senebi').filter(o => o.tab === 'senebi');
+  const countByOp = {};
+  rows.forEach(o => { if(o.senebiOperacion) countByOp[o.senebiOperacion] = (countByOp[o.senebiOperacion]||0)+1; });
+  document.querySelectorAll('#hist-senebi-op-filter .filter-chip').forEach(function(chip) {
+    const op = chip.dataset.histsnbop;
+    const count = countByOp[op] || 0;
+    // Remover badge anterior
+    const prev = chip.querySelector('.chip-badge');
+    if (prev) prev.remove();
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'chip-badge';
+      badge.textContent = count;
+      badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:var(--navy);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:800;margin-left:5px;vertical-align:middle';
+      chip.appendChild(badge);
+      chip.style.borderColor = 'var(--teal)';
+    } else {
+      chip.style.borderColor = '';
+    }
+  });
+}
+
 function setHistSenebiOp(op, el) {
   currentHistSenebiOp = op;
   document.querySelectorAll('#hist-senebi-op-filter .filter-chip').forEach(c => c.classList.remove('active'));
@@ -2812,6 +2839,7 @@ function onHistTipoChange() {
   const snbOpFilt = document.getElementById('hist-senebi-op-filter');
   if (snbOpFilt) snbOpFilt.style.display = (tipo === 'senebi') ? 'flex' : 'none';
   if (tipo !== 'senebi') currentHistSenebiOp = 'all';
+  if (tipo === 'senebi') updateHistSenebiChipBadges();
   if (tipo) renderHistorial();
 }
 
