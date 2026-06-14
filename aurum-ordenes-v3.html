@@ -2433,6 +2433,7 @@ function editOrder(id) {
 
 function loadOrderIntoModal(o, id, isViewMode) {
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
+  window._prevView = currentView; // guardar vista actual para volver al cerrar
   showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
@@ -3239,14 +3240,15 @@ function openModal() {
   document.getElementById('modal').classList.add('open');
 }
 function closeModal() {
-  // Si estaba en modo ver, restaurar el footer
+  // Si estaba en modo ver, restaurar footer y volver a la vista previa
   if (window._viewMode) {
+    var prevView = window._prevView;
     window._viewMode = false;
+    window._prevView = null;
     var footer = document.querySelector('#modal .modal-footer');
     if (footer) {
       footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-submit" onclick="submitOrder()">Enviar Orden</button>';
     }
-    // Rehabilitar campos
     var modal = document.getElementById('modal');
     if (modal) {
       modal.querySelectorAll('input, select, textarea, button, [onclick]').forEach(function(el) {
@@ -3259,6 +3261,9 @@ function closeModal() {
         el.style.pointerEvents = '';
       });
     }
+    document.getElementById('modal').classList.remove('open');
+    if (prevView && prevView !== currentView) { showView(prevView); }
+    return;
   }
   document.getElementById('modal').classList.remove('open');
   document.getElementById('client-dd').classList.remove('open');
