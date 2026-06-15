@@ -2447,9 +2447,8 @@ function editOrder(id) {
 function loadOrderIntoModal(o, id, isViewMode) {
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
   window._prevView = currentView; // guardar vista actual para volver al cerrar
-  // Solo cambiar de vista si NO es modo ver, para no alterar la vista actual del usuario
-  if (!isViewMode) showView(tabMap[o.tab]||'fci-hoy');
-  else setModalFields(tabMap[o.tab]||'fci-hoy'); // solo preparar el formulario sin cambiar vista
+  // Cambiar a la vista del módulo (tanto en edición como en Ver)
+  showView(tabMap[o.tab]||'fci-hoy');
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
     document.getElementById('client-sel-text').textContent = o.comitente+' · '+o.cliente;
@@ -2484,6 +2483,12 @@ function loadOrderIntoModal(o, id, isViewMode) {
         var ip=document.getElementById('f-importe-pago'); if(ip) ip.value=o.importe||'';
       }
       document.getElementById('f-fecha-pago').value=o.fechaValor||o.fecha||'';
+    } else if (o.tab==='lic') {
+      var el;
+      el=document.getElementById('f-denominacion'); if(el) el.value=o.denominacion||'';
+      el=document.getElementById('f-precio-tasa');  if(el) el.value=o.precioTasa||'';
+      el=document.getElementById('f-cantidad');     if(el) el.value=o.cantidad||'';
+      el=document.getElementById('f-moneda-lic');   if(el) el.value=o.monedaLic||'';
     } else if (o.tab==='conv') {
       document.getElementById('f-importe-conv').value=o.importe||'';
       document.getElementById('f-moneda-conv').value=o.monedaConv||'';
@@ -3316,6 +3321,11 @@ function closeModal() {
     }
     document.getElementById('modal').classList.remove('open');
     window._editingId=null; window._editingFbKey=null;
+    // Volver a la vista previa si era diferente (ej: Acumulado)
+    if (window._prevView && window._prevView !== currentView) {
+      showView(window._prevView);
+    }
+    window._prevView = null;
     return;
   }
   document.getElementById('modal').classList.remove('open');
