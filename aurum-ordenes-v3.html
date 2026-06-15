@@ -284,6 +284,12 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
   z-index:200;align-items:center;justify-content:center;
 }
 .modal-overlay.open{display:flex;}
+#ver-modal.open{display:flex;}
+.ver-campo{margin-bottom:12px;}
+.ver-label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.ver-valor{font-size:13px;font-weight:600;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;min-height:36px;}
+.ver-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+.ver-full{grid-column:1/-1;}
 .modal{
   background:#fff;border-radius:16px;width:min(720px, 95vw);
   max-height:96vh;overflow-y:auto;
@@ -755,6 +761,20 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
     </div><!-- /main-area -->
   </div><!-- /layout -->
 </div><!-- /app -->
+
+<!-- ══ VER ORDEN MODAL (solo lectura) ══ -->
+<div class="modal-overlay" id="ver-modal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:600px;width:95%">
+    <div class="modal-header">
+      <div class="modal-title" id="ver-modal-title">Ver Orden</div>
+      <button class="modal-close" onclick="cerrarVerModal()">✕</button>
+    </div>
+    <div class="modal-body" id="ver-modal-body" style="padding:18px 20px"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarVerModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ ORDER MODAL ══ -->
 <div class="modal-overlay" id="modal">
@@ -2419,11 +2439,126 @@ function getBtns(o) {
   if (o.estado === 'PENDIENTE') return vBtn+eBtn+dBtn;
   return vBtn+'<span style="font-size:11px;color:var(--text-muted);font-style:italic">&#128274; Pedir al admin</span>';
 }
+function cerrarVerModal() {
+  document.getElementById('ver-modal').style.display = 'none';
+}
+
+function campo(label, valor, full) {
+  return '<div class="ver-campo'+(full?' ver-full':'')+'"><div class="ver-label">'+label+'</div><div class="ver-valor">'+(valor||'—')+'</div></div>';
+}
+
 function showComentario(id) {
   const o = orders.find(x => x.id===id || x.fbKey===id);
   if (!o) return;
-  // Mostrar la orden completa en modo solo lectura, sin chequear permisos de edicion
-  loadOrderIntoModal(o, id, true);
+
+  const modal  = document.getElementById('ver-modal');
+  const titulo = document.getElementById('ver-modal-title');
+  const body   = document.getElementById('ver-modal-body');
+  if (!modal || !titulo || !body) return;
+
+  titulo.textContent = 'Ver Orden — ' + (o.tipo||'');
+
+  // Comercial que cargó
+  const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name || o.solicitadoPor || '—';
+
+  let html = '<div class="ver-grid">';
+
+  // Campos comunes
+  html += campo('Tipo', o.tipo);
+  html += campo('Prioridad', o.prioridad);
+  html += campo('Estado', o.estado);
+  html += campo('Comercial', comName);
+
+  if (o.tab !== 'senebi') {
+    html += campo('Cliente / Comitente', (o.comitente||'') + (o.cliente ? ' · ' + o.cliente : ''), true);
+  }
+
+  // Por módulo
+  if (o.tab === 'fci') {
+    html += campo('Fondo / FCI', o.fondo);
+    html += campo('Moneda', o.moneda || o.monedaFci);
+    html += campo('Importe', o.importe);
+    html += campo('Fecha Valor', o.fechaValor || o.fecha);
+
+  } else if (o.tab === 'pagos') {
+    html += campo('Banco', o.banco);
+    html += campo('Moneda', o.moneda);
+    html += campo('Importe', o.importe);
+    html += campo('Fecha Valor', o.fechaValor || o.fecha);
+
+  } else if (o.tab === 'conv') {
+    html += campo('Moneda Conversión', o.monedaConv);
+    html += campo('Importe', o.importe);
+    html += campo('Fecha Valor', o.fechaValor || o.fecha);
+    html += campo('Fecha Liquidación', o.fechaLiq);
+
+  } else if (o.tab === 'lic') {
+    html += campo('Denominación', o.denominacion);
+    html += campo('Precio / Tasa', o.precioTasa);
+    html += campo('Cantidad', o.cantidad);
+    html += campo('Moneda Integración', o.monedaLic);
+
+  } else if (o.tab === 'senebi') {
+    const opLabels = {'compra-mep':'Compra MEP','compra-cable':'Compra CABLE','venta-mep':'Venta MEP','venta-cable':'Venta CABLE','canje-mep-cable':'Canje MEP>CABLE','canje-cable-mep':'Canje CABLE>MEP','compra-instrumento':'Compra Instrumento','venta-instrumento':'Venta Instrumento'};
+    html += campo('Operación', opLabels[o.senebiOperacion] || o.senebiOperacion);
+    const metodo = o.senebiTipo==='mesa'?'Con Mesa':o.senebiTipo==='directo'?'Directo':o.senebiTipo==='instrumento'?'Instrumento':'—';
+    html += campo('Método', metodo);
+    html += campo('Comitente', (o.comitenteCompra||'') + (o.nombreCompra ? ' · '+o.nombreCompra : ''), true);
+
+    if (o.senebiTipo === 'instrumento') {
+      html += campo('Ticker', o.instTicker);
+      html += campo('Plazo', o.instPlazo);
+      html += campo('Nominales', o.instNominales);
+      html += campo('Precio Mesa Comercial', o.instPrecioMesa);
+      html += campo('Precio Cliente', o.instPrecioCliente);
+      html += campo('Monto Mesa', o.instMontoMesa);
+      html += campo('Monto Cliente', o.instMontoCliente);
+      html += campo('Resultado', o.resultado);
+    } else if (o.senebiTipo === 'mesa') {
+      html += campo('Ticker Base', o.tickerBase);
+      html += campo('Plazo', o.plazo);
+      html += campo('Monto SENEBI', o.montoSenebi);
+      html += campo('TC Mesa', o.tcMesa);
+      html += campo('TC Cliente', o.tcCliente);
+      html += campo('ARS Mesa', o.arsMesa);
+      html += campo('ARS Cliente', o.arsCliente);
+      html += campo('Resultado', o.resultado);
+    } else {
+      html += campo('Ticker ARS', o.tickerArs);
+      html += campo('Ticker USD', o.tickerUsd);
+      html += campo('Nominales', o.nominales);
+      html += campo('Precio ARS', o.precioArs);
+      html += campo('Precio USD', o.precioUsd);
+      html += campo('Monto ARS', o.montoArs);
+      html += campo('Monto USD', o.montoUsd);
+      html += campo('TC Implícito', o.tcImplicito);
+      html += campo('Resultado', o.resultado);
+    }
+
+  } else if (o.tab === 'ppt') {
+    const esUSD = o.pptMoneda === 'MEP' || o.pptMoneda === 'CABLE';
+    html += campo('Operación', o.pptTipo);
+    html += campo('Ticker', o.pptTicker);
+    html += campo('Moneda', o.pptMoneda);
+    if (esUSD) html += campo('Tipo de Cambio', o.pptTc);
+    html += campo('VN', o.pptVn);
+    html += campo('Precio', o.pptPrecio);
+    html += campo('Arancel', o.pptArancelTasa === '0.005' ? 'Estándar (0,50%)' : 'Preferencial (0,30%)');
+    html += campo('Bruto', o.pptBruto);
+    html += campo('Arancel $', o.pptArancelMonto);
+    html += campo('IVA Arancel', o.pptIvaArancel);
+    html += campo('DDMM', o.pptDdmm);
+    html += campo('IVA DDMM', o.pptIvaDdmm);
+    if (esUSD) html += campo('Neto '+o.pptMoneda, o.pptNetoUsd);
+    html += campo('Neto $', o.pptNetoPesos);
+  }
+
+  // Comentarios
+  if (o.comentarios) html += campo('Comentarios', o.comentarios, true);
+
+  html += '</div>';
+  body.innerHTML = html;
+  modal.style.display = 'flex';
 }
 
 function deleteOrder(id) {
