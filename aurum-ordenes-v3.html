@@ -2552,15 +2552,30 @@ function loadOrderIntoModal(o, id, isViewMode) {
     if (o.tab==='ppt') {
       resetPptFields();
       const s = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+      // 1) Tipo y ticker primero
       s('f-ppt-tipo',   o.pptTipo);
       s('f-ppt-ticker', o.pptTicker);
+      // 2) Moneda y TC (onPptMonedaChange muestra/oculta campo TC)
+      const selM = document.getElementById('f-ppt-moneda');
+      if(selM) { selM.value=o.pptMoneda||''; onPptMonedaChange(); }
+      s('f-ppt-tc', o.pptTc);
+      // 3) Modo VN/Monto y valores
+      if (o.pptModo) setPptModo(o.pptModo);
       s('f-ppt-precio', o.pptPrecio);
       s('f-ppt-vn',     o.pptVn);
-      const selM = document.getElementById('f-ppt-moneda'); if(selM) { selM.value=o.pptMoneda||''; onPptMonedaChange(); }
-      s('f-ppt-tc',     o.pptTc);
-      const selA = document.getElementById('f-ppt-arancel'); if(selA) selA.value=o.pptArancelTasa||'0.005';
-      if (o.pptModo) setPptModo(o.pptModo);
+      // 4) Arancel
+      const selA = document.getElementById('f-ppt-arancel');
+      if(selA) selA.value=o.pptArancelTasa||'0.005';
+      // 5) Calcular (dispara todos los campos derivados: bruto, arancel, IVA, DDMM, neto)
       calcPPT();
+      // 6) Setear campos calculados guardados directamente (por si calcPPT no los recalcula igual)
+      s('f-ppt-bruto',        o.pptBruto);
+      s('f-ppt-arancel-monto',o.pptArancelMonto);
+      s('f-ppt-iva-arancel',  o.pptIvaArancel);
+      s('f-ppt-ddmm',         o.pptDdmm);
+      s('f-ppt-iva-ddmm',     o.pptIvaDdmm);
+      s('f-ppt-neto-usd',     o.pptNetoUsd);
+      s('f-ppt-neto-pesos',   o.pptNetoPesos);
     }
     // Solo setear _editingFbKey si es modo edicion, no en modo ver
     if (!isViewMode) {
@@ -3304,9 +3319,10 @@ function openModal() {
 function closeModal() {
   // Si estaba en modo ver, restaurar footer y volver a la vista previa
   if (window._viewMode) {
-    var prevView = window._prevView;
+    var prevView = window._prevView; // guardar antes de limpiar
     window._viewMode = false;
     window._prevView = null;
+    window._editingId=null; window._editingFbKey=null;
     var footer = document.querySelector('#modal .modal-footer');
     if (footer) {
       footer.innerHTML = '<button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-submit" onclick="submitOrder()">Enviar Orden</button>';
@@ -3324,12 +3340,10 @@ function closeModal() {
       });
     }
     document.getElementById('modal').classList.remove('open');
-    window._editingId=null; window._editingFbKey=null;
-    // Volver a la vista previa si era diferente (ej: Acumulado)
-    if (window._prevView && window._prevView !== currentView) {
-      showView(window._prevView);
+    // Volver a la vista previa (ej: Acumulado) si era diferente a la actual
+    if (prevView && prevView !== currentView) {
+      showView(prevView);
     }
-    window._prevView = null;
     return;
   }
   document.getElementById('modal').classList.remove('open');
