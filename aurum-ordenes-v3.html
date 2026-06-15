@@ -2786,6 +2786,8 @@ function getHistBaseRows(tab) {
   const to       = document.getElementById('hist-to').value;
   const comercial= document.getElementById('hist-comercial')?.value || '';
   let rows = filterByUser([...orders], tab);
+  // Acumulado: solo dias anteriores a hoy
+  rows = rows.filter(o => o.fecha < TODAY);
   if (from) rows = rows.filter(o => o.fecha >= from);
   if (to)   rows = rows.filter(o => o.fecha <= to);
   if (comercial) rows = rows.filter(o => o.solicitadoPor === comercial);
@@ -2910,6 +2912,8 @@ function renderHistorial() {
   const filterTab = tipoToTab[tipo]; // undefined si tipo='' (sin selección)
 
   let rows = filterByUser([...orders], filterTab);
+  // Acumulado: solo muestra ordenes de dias anteriores a hoy
+  rows = rows.filter(o => o.fecha < TODAY);
   if (from)     rows = rows.filter(o => o.fecha >= from);
   if (to)       rows = rows.filter(o => o.fecha <= to);
   if (tipo)     rows = rows.filter(o => o.tab === filterTab);
@@ -3305,6 +3309,7 @@ function closeModal() {
       });
     }
     document.getElementById('modal').classList.remove('open');
+    window._editingId=null; window._editingFbKey=null;
     return;
   }
   document.getElementById('modal').classList.remove('open');
