@@ -682,6 +682,19 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
                 </div>
               </div>
             </div>
+            <!-- Ordenes -->
+            <div class="admin-card">
+              <div class="admin-card-header"><div class="admin-card-title">📋 Órdenes</div></div>
+              <div class="admin-card-body">
+                <div style="background:#FFF0F0;border:1px solid #E04B4B;border-radius:7px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#C03030;line-height:1.5">
+                  ⚠ Esta acción borra <strong>todas las órdenes</strong> del sistema (vista diaria + acumulado). No se puede deshacer.
+                </div>
+                <button onclick="clearAllOrdenes()" style="width:100%;background:#E04B4B;border:1.5px solid #C03030;color:#fff;padding:9px 0;border-radius:8px;font-family:Nunito,sans-serif;font-size:13px;font-weight:700;cursor:pointer">
+                  🗑 Borrar todas las órdenes
+                </button>
+              </div>
+            </div>
+
             <!-- Bancos -->
             <div class="admin-card">
               <div class="admin-card-header"><div class="admin-card-title">🏦 Bancos</div></div>
@@ -3713,6 +3726,16 @@ function addFondo() {
 function removeFondo(idx) {
   fondos.splice(idx,1); renderFondosAdmin(); showToast('Fondo eliminado');
 }
+function clearAllOrdenes() {
+  if (!confirm('⚠ ¿Estás seguro que querés borrar TODAS las órdenes? Esta acción no se puede deshacer.')) return;
+  if (!confirm('Segunda confirmación: ¿Borrar todas las órdenes del sistema?')) return;
+  window.__db.ref('orders').remove().then(function() {
+    showToast('✓ Todas las órdenes fueron eliminadas');
+  }).catch(function(err) {
+    showToast('Error al borrar: ' + err.message);
+  });
+}
+
 function clearAllFondos() {
   if (!confirm('¿Borrar todos los fondos? Esta acción no se puede deshacer.')) return;
   fondos = [];
