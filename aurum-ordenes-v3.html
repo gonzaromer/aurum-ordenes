@@ -1877,7 +1877,7 @@ function showFields(type) {
   document.getElementById('lic-fields').style.display   = (type==='lic')    ? 'block':'none';
   document.getElementById('senebi-fields').style.display= (type==='senebi') ? 'block':'none';
   document.getElementById('ppt-fields').style.display   = (type==='ppt')    ? 'block':'none';
-  document.getElementById('cliente-group').style.display= (type==='senebi'||type==='ppt') ? 'none':'block';
+  document.getElementById('cliente-group').style.display= (type==='senebi') ? 'none':'block';
 }
 
 function addHabilDays(dateStr, days) {
@@ -2447,7 +2447,9 @@ function editOrder(id) {
 function loadOrderIntoModal(o, id, isViewMode) {
   const tabMap = {fci:'fci-hoy',pagos:'pagos-hoy',conv:'conv-hoy',lic:'lic-hoy',senebi:'senebi-hoy',ppt:'ppt-hoy'};
   window._prevView = currentView; // guardar vista actual para volver al cerrar
-  showView(tabMap[o.tab]||'fci-hoy');
+  // Solo cambiar de vista si NO es modo ver, para no alterar la vista actual del usuario
+  if (!isViewMode) showView(tabMap[o.tab]||'fci-hoy');
+  else setModalFields(tabMap[o.tab]||'fci-hoy'); // solo preparar el formulario sin cambiar vista
   setTimeout(function() {
     selectedClient = {comitente:o.comitente, nombre:o.cliente};
     document.getElementById('client-sel-text').textContent = o.comitente+' · '+o.cliente;
@@ -3303,7 +3305,6 @@ function closeModal() {
       });
     }
     document.getElementById('modal').classList.remove('open');
-    if (prevView && prevView !== currentView) { showView(prevView); }
     return;
   }
   document.getElementById('modal').classList.remove('open');
