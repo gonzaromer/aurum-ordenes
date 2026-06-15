@@ -3729,7 +3729,7 @@ function removeFondo(idx) {
 function clearAllOrdenes() {
   if (!confirm('⚠ ¿Estás seguro que querés borrar TODAS las órdenes? Esta acción no se puede deshacer.')) return;
   if (!confirm('Segunda confirmación: ¿Borrar todas las órdenes del sistema?')) return;
-  window.__db.ref('orders').remove().then(function() {
+  window.__db.ref('ordenes').remove().then(function() {
     showToast('✓ Todas las órdenes fueron eliminadas');
   }).catch(function(err) {
     showToast('Error al borrar: ' + err.message);
