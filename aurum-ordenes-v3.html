@@ -2456,6 +2456,7 @@ function loadOrderIntoModal(o, id, isViewMode) {
     document.getElementById('client-sel-display').style.display='flex';
     document.getElementById('client-modal-search').style.display='none';
     document.getElementById('f-tipo').value = o.tipo;
+    onTipoChange(); // mostrar los campos del formulario correspondientes al tipo
     document.getElementById('f-prioridad').value = o.prioridad||'';
     document.getElementById('f-comentarios').value = o.comentarios||'';
     if (o.tab==='fci') {
