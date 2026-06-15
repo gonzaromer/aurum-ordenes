@@ -3426,7 +3426,7 @@ function openModal() {
   document.getElementById('f-prioridad').value = '';
   ['f-fondo','f-importe-fci','f-importe-pago','f-importe-conv'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';} );
   const today = TODAY;
-  ['f-fecha-fci','f-fecha-pago','f-fecha-conv','f-fecha-liq'].forEach(id => {const el=document.getElementById(id);if(el)el.value=today;});
+  ['f-fecha-fci','f-fecha-pago','f-fecha-conv','f-fecha-liq'].forEach(id => {const el=document.getElementById(id);if(el){el.value=today;if(id!=='f-fecha-liq')el.min=TODAY;}});
   ['f-denominacion','f-precio-tasa','f-cantidad'].forEach(id => {const el=document.getElementById(id);if(el)el.value='';});
   const ml=document.getElementById('f-moneda-lic');if(ml)ml.value='';
   // Reset SENEBI
@@ -3740,6 +3740,11 @@ function submitOrder() {
   if (tab==='ppt' && !document.getElementById('f-ppt-precio').value) { showToast('⚠ Ingresá el precio'); return; }
   if (tab==='senebi' && !currentSenebiTipo) { showToast('⚠ Seleccioná el tipo de operación SENEBI'); return; }
   if (tab==='senebi' && currentSenebiTipo==='instrumento' && !document.getElementById('f-inst-ticker').value.trim()) { showToast('⚠ Ingresá el ticker del instrumento'); return; }
+  // Validar que fechaValor no sea pasada
+  if (['fci','pagos','conv'].includes(tab) && newOrder.fechaValor && newOrder.fechaValor < TODAY) {
+    showToast('⚠ La Fecha Valor no puede ser anterior a hoy');
+    return;
+  }
   if (tab==='pagos' && !newOrder.moneda) { showToast('⚠ Seleccioná la moneda'); return; }
   var tipoOrdenSel = document.getElementById('f-tipo')?.value || '';
   var esChequeOrEcheq = (tipoOrdenSel === 'ECHEQ' || tipoOrdenSel === 'CHEQUE FISICO');
@@ -4098,7 +4103,7 @@ window.__db.ref('ordenes').on('value', function(snapshot) {
   var data = snapshot.val();
   orders = data ? Object.entries(data).map(function(e){ return Object.assign({},e[1],{fbKey:e[0]}); }) : [];
   if (typeof renderTable==='function' && currentUser) {
-    renderTable();
+    if (currentView !== 'historial' && currentView !== 'admin') renderTable();
     if (currentView==='historial') renderHistorial();
     if (currentView==='senebi-hoy' && typeof updateSenebiStats==='function') updateSenebiStats();
     if (currentView==='historial' && typeof updateHistStats==='function') updateHistStats();
