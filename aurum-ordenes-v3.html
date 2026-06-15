@@ -2466,7 +2466,9 @@ function loadOrderIntoModal(o, id, isViewMode) {
       if (mfci) mfci.value = o.moneda || o.monedaFci || '';
       // Restaurar Importe o Liquidez
       if (o.importe === 'Liquidez') {
-        toggleLiquidez('f-importe-fci','btn-liq-fci');
+        var _inp=document.getElementById('f-importe-fci'), _btn=document.getElementById('btn-liq-fci');
+        if(_inp){_inp.value='Liquidez';_inp.readOnly=true;_inp.style.background='#EAF6F0';_inp.style.color='var(--teal-dark)';_inp.style.fontWeight='800';}
+        if(_btn){_btn.style.background='var(--navy)';_btn.style.color='#fff';_btn.style.borderColor='var(--navy)';_btn.textContent='✓ Liquidez';_btn.style.fontWeight='800';}
       } else {
         document.getElementById('f-importe-fci').value = o.importe||'';
       }
@@ -2478,7 +2480,9 @@ function loadOrderIntoModal(o, id, isViewMode) {
       var bsi=document.getElementById('banco-search-input'); if(bsi) bsi.style.display= o.banco ? 'none' : 'block';
       document.getElementById('f-moneda-pago').value=o.moneda||'';
       if (o.importe === 'Liquidez') {
-        toggleLiquidez('f-importe-pago','btn-liq-pago');
+        var _inp2=document.getElementById('f-importe-pago'), _btn2=document.getElementById('btn-liq-pago');
+        if(_inp2){_inp2.value='Liquidez';_inp2.readOnly=true;_inp2.style.background='#EAF6F0';_inp2.style.color='var(--teal-dark)';_inp2.style.fontWeight='800';}
+        if(_btn2){_btn2.style.background='var(--navy)';_btn2.style.color='#fff';_btn2.style.borderColor='var(--navy)';_btn2.textContent='✓ Liquidez';_btn2.style.fontWeight='800';}
       } else {
         var ip=document.getElementById('f-importe-pago'); if(ip) ip.value=o.importe||'';
       }
@@ -2593,7 +2597,7 @@ function loadOrderIntoModal(o, id, isViewMode) {
       document.getElementById('modal-title').textContent='Editando Orden '+id;
       document.querySelector('.btn-submit').textContent='Guardar Cambios';
     }
-  }, 200);
+  }, 350);
 }
 
 function renderTable() {
