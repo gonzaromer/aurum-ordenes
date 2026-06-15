@@ -2552,7 +2552,12 @@ function loadOrderIntoModal(o, id, isViewMode) {
       if (o.pptModo) setPptModo(o.pptModo);
       calcPPT();
     }
-    window._editingId=id; window._editingFbKey=o.fbKey;
+    // Solo setear _editingFbKey si es modo edicion, no en modo ver
+    if (!isViewMode) {
+      window._editingId=id; window._editingFbKey=o.fbKey;
+    } else {
+      window._editingId=null; window._editingFbKey=null;
+    }
     document.getElementById('modal').classList.add('open');
 
     if (isViewMode) {
