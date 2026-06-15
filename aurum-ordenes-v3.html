@@ -1791,6 +1791,13 @@ function showView(view) {
   const isHist  = view === 'historial';
   document.getElementById('orders-view').style.display   = (!isAdmin && !isHist) ? 'block' : 'none';
   document.getElementById('historial-view').style.display = isHist  ? 'block' : 'none';
+  // Ocultar stats cuando se va al historial o admin
+  if (isHist || isAdmin) {
+    var ss = document.getElementById('stats-section');
+    var snbs = document.getElementById('senebi-stats-section');
+    if (ss) ss.style.display = 'none';
+    if (snbs) snbs.style.display = 'none';
+  }
   // Stats generales: para todos los usuarios, en todos los módulos del día excepto SENEBI y acumulado
   const statsSection = document.getElementById('stats-section');
   if (statsSection) {
