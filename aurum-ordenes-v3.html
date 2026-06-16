@@ -4021,31 +4021,39 @@ async function importClientsExcel(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      // Parse CSV/simple text - for XLSX we read as text and parse
-      const text = e.target.result;
-      const lines = text.split('\n').filter(l=>l.trim());
-      let added = 0, updated = 0;
-      lines.forEach(line => {
-        // Format: "123-NOMBRE CLIENTE" or just text
-        const parts = line.trim().split('-');
-        if (parts.length >= 2) {
-          const num = parts[0].trim();
-          let nombre = parts.slice(1).join('-').trim();
-          const isInactive = nombre.toUpperCase().startsWith('INACTIVO ');
-          if (isInactive) nombre = nombre.slice(9).trim();
-          const activo = !isInactive;
-          const existing = clients.find(c=>c.comitente===num);
-          if (existing) { existing.nombre=nombre; existing.activo=activo; updated++; }
-          else { clients.push({comitente:num,nombre,activo}); added++; }
-        }
+      // Usar SheetJS para leer .xlsx correctamente
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type: 'array'});
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ''});
+
+      let added = 0, updated = 0, skipped = 0;
+      // Fila 0 es el header (Número, Denominación, ...) - saltear
+      rows.forEach((row, idx) => {
+        if (idx === 0) return; // skip header
+        const num = String(row[0] || '').trim();
+        let nombre = String(row[1] || '').trim();
+        if (!num || !nombre) { skipped++; return; }
+        // Detectar inactivo por prefijo "INACTIVO" en nombre
+        const isInactive = nombre.toUpperCase().startsWith('INACTIVO ');
+        if (isInactive) nombre = nombre.slice(9).trim();
+        const activo = !isInactive;
+        const existing = clients.find(c => c.comitente === num);
+        if (existing) { existing.nombre = nombre; existing.activo = activo; updated++; }
+        else { clients.push({comitente: num, nombre, activo}); added++; }
       });
-      renderClients();
-      showToast(`✓ Importado: ${added} nuevos, ${updated} actualizados`);
+
+      // Guardar en Firebase
+      window.__db.ref('clientes').set(clients).then(function() {
+        renderClients();
+        showToast('✓ Importado: ' + added + ' nuevos, ' + updated + ' actualizados' + (skipped ? ', ' + skipped + ' saltados' : ''));
+      });
     } catch(err) {
-      showToast('⚠ Error al leer el archivo');
+      showToast('⚠ Error al leer el archivo: ' + err.message);
+      console.error(err);
     }
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsArrayBuffer(file);
   event.target.value = '';
 }
 
