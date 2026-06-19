@@ -250,8 +250,8 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
 
 .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.s-PENDIENTE{background:rgba(142,151,185,0.12);color:var(--text-muted);}
-.s-PENDIENTE .status-dot{background:var(--text-muted);}
+.s-PENDIENTE{background:rgba(224,75,75,0.12);color:#C0392B;}
+.s-PENDIENTE .status-dot{background:#E04B4B;}
 .s-ENVIADO{background:rgba(45,125,210,0.12);color:#2D7DD2;}
 .s-ENVIADO .status-dot{background:#2D7DD2;}
 .s-EN-PROCESO{background:rgba(230,168,23,0.12);color:#B8820A;}
@@ -577,7 +577,20 @@ td{padding:7px 7px;font-size:12px;vertical-align:middle;}
             <button class="filter-chip" data-snbop="compra-instrumento" onclick="setSenebiOpFilter('compra-instrumento',this)">Compra Instrumento</button>
             <button class="filter-chip" data-snbop="venta-instrumento" onclick="setSenebiOpFilter('venta-instrumento',this)">Venta Instrumento</button>
           </div>
-          <div class="filter-bar" id="filter-bar" style="display:none"></div>
+          <div class="filter-bar" id="filter-bar" style="display:none;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="filter-select" id="tabla-filter-estado" style="width:150px" onchange="renderTable()">
+              <option value="">Estado: Todos</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN PROCESO">En Proceso</option>
+              <option value="EJECUTADO">Ejecutado</option>
+            </select>
+            <select class="filter-select" id="tabla-filter-tipo" style="width:150px" onchange="renderTable()">
+              <option value="">Tipo: Todos</option>
+            </select>
+            <select class="filter-select" id="tabla-filter-comercial" style="width:160px;display:none" onchange="renderTable()">
+              <option value="">Comercial: Todos</option>
+            </select>
+          </div>
           <div class="table-wrap" id="main-table-wrap"><div class="table-scroll">
             <table><thead><tr id="table-head"></tr></thead><tbody id="table-body"></tbody></table>
           </div></div>
@@ -1395,7 +1408,7 @@ function isSuperComercial(tab) {
 }
 function canEditAnyOrder(tab) { return isAdmin() || isSuperComercial(tab); }
 function canChangeStatus(tab) { return isAdmin() || isSuperComercial(tab); }
-function canAssignComercial(tab) { return isAdmin() || isSuperComercial(tab); }
+function canAssignComercial(tab) { return isAdmin() || isMiddleOffice(); }
 
 function initPasswords() {
   comerciales.forEach(function(c) {
@@ -1412,7 +1425,27 @@ function initPasswords() {
         }
       });
     });
+    // Cargar lista de comerciales persistida en Firebase (si existe)
+    window.__db.ref('comerciales').once('value').then(function(snap) {
+      var data = snap.val();
+      if (data && Array.isArray(data) && data.length > 0) {
+        comerciales = data;
+        initPasswords_passwordsOnly();
+        if (typeof buildLoginSelect === 'function') buildLoginSelect();
+        if (typeof renderComerciales === 'function') renderComerciales();
+        if (typeof populateHistComercial === 'function') populateHistComercial();
+      } else {
+        // Primera vez: persistir el array base actual
+        window.__db.ref('comerciales').set(comerciales);
+      }
+    });
   }
+}
+function initPasswords_passwordsOnly() {
+  comerciales.forEach(function(c) {
+    if (!passwords[c.id]) passwords[c.id] = btoa(c.id);
+    if (firstLogin[c.id] === undefined) firstLogin[c.id] = true;
+  });
 }
 initPasswords();
 
@@ -1844,9 +1877,39 @@ function showView(view) {
 
   setModalFields(view);
   currentVistaFutura = false;
+  if (!isSenebi) populateTablaFiltros(view);
   renderTable();
   // Actualizar stats del módulo activo
   if (!isAdmin && !isHist && view !== 'senebi-hoy') updateModuleStats(view);
+}
+
+function populateTablaFiltros(view) {
+  const tipoSel = document.getElementById('tabla-filter-tipo');
+  const comSel  = document.getElementById('tabla-filter-comercial');
+  if (!tipoSel) return;
+  const tiposPorModulo = {
+    'fci-hoy':   ['SUSCRIPCION','RESCATE'],
+    'pagos-hoy': ['PAGO','PAGO RESCATE','ECHEQ','CHEQUE FISICO'],
+    'conv-hoy':  ['CONVERSION'],
+    'lic-hoy':   ['LICITACION'],
+    'ppt-hoy':   ['PPT']
+  };
+  const tipos = tiposPorModulo[view] || [];
+  tipoSel.innerHTML = '<option value="">Tipo: Todos</option>' + tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
+  tipoSel.value = '';
+
+  // Comercial: solo visible para admin o Middle Office en su modulo
+  const tab = getTabName(view);
+  if (comSel) {
+    if (currentUser.isAdmin || isSuperComercial(tab)) {
+      comSel.style.display = '';
+      comSel.innerHTML = '<option value="">Comercial: Todos</option>' + comerciales.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+      comSel.value = '';
+    } else {
+      comSel.style.display = 'none';
+      comSel.value = '';
+    }
+  }
 }
 
 function setModalFields(view) {
@@ -1996,12 +2059,17 @@ function getTodayOrders() {
     rows = orders.filter(o => o.tab === tab && (o.fechaValor || o.fecha) === TODAY);
   }
   rows = filterByUser(rows, tab);
-  // Para SENEBI usar filtros propios, para el resto usar currentFilter
+  // Para SENEBI usar filtros propios, para el resto usar los selects de filtro
   if (tab === 'senebi') {
     if (currentSenebiEstadoFilter !== 'all') rows = rows.filter(o => o.estado === currentSenebiEstadoFilter);
     if (currentSenebiOpFilter !== 'all') rows = rows.filter(o => o.senebiOperacion === currentSenebiOpFilter);
   } else {
-    if (currentFilter !== 'all') rows = rows.filter(o => o.estado === currentFilter);
+    const fEstado = document.getElementById('tabla-filter-estado')?.value || '';
+    const fTipo   = document.getElementById('tabla-filter-tipo')?.value || '';
+    const fCom    = document.getElementById('tabla-filter-comercial')?.value || '';
+    if (fEstado) rows = rows.filter(o => o.estado === fEstado);
+    if (fTipo)   rows = rows.filter(o => o.tipo === fTipo);
+    if (fCom)    rows = rows.filter(o => o.solicitadoPor === fCom);
   }
   return rows;
 }
@@ -2904,8 +2972,9 @@ function renderTable() {
     }
 
     const canChange = currentUser.isAdmin || isSuperComercial(o.tab);
+    const estadoColors = {'PENDIENTE':'background:rgba(224,75,75,0.12);color:#C0392B;border-color:rgba(224,75,75,0.3)','EN PROCESO':'background:rgba(230,168,23,0.12);color:#B8820A;border-color:rgba(230,168,23,0.3)','EJECUTADO':'background:rgba(39,174,122,0.12);color:#1E8B5F;border-color:rgba(39,174,122,0.3)'};
     let statusCell = canChange
-      ? `<td><select class="status-select" onchange="updateStatus('${o.fbKey||o.id}',this.value)">
+      ? `<td><select class="status-select" style="${estadoColors[o.estado]||''};font-weight:700" onchange="updateStatus('${o.fbKey||o.id}',this.value);this.style.cssText=({'PENDIENTE':'${estadoColors['PENDIENTE']}','EN PROCESO':'${estadoColors['EN PROCESO']}','EJECUTADO':'${estadoColors['EJECUTADO']}'}[this.value]||'')+';font-weight:700'">
            ${['PENDIENTE','EN PROCESO','EJECUTADO'].map(s=>`<option ${o.estado===s?'selected':''}>${s}</option>`).join('')}
          </select></td>`
       : `<td><span class="status-badge ${sKey}"><span class="status-dot"></span>${o.estado}</span></td>`;
@@ -2916,7 +2985,7 @@ function renderTable() {
 
     return `<tr>
       <td class="id-mono" data-tip="${o.id}">${o.nro||o.id}</td>
-      <td class="id-mono" data-tip="${o.fecha}">${o.fecha}</td>
+      <td class="id-mono" data-tip="${o.fecha}">${o.fechaValor||o.fecha}${o.horaCarga?` <span style="color:var(--text-muted);font-size:10px">${o.horaCarga}</span>`:''}</td>
       <td><span class="tipo-badge ${tipoClass}" data-tip="${o.tipo}">${o.tipo}</span></td>
       ${(tab!=='senebi'&&tab!=='ppt') ? `<td class="id-mono" data-tip="${o.comitente}">${o.comitente}</td>` : ''}
       ${(tab!=='senebi'&&tab!=='ppt') ? `<td style="font-weight:700;color:var(--text);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-tip="${o.cliente}">${o.cliente}</td>` : ''}
@@ -3113,7 +3182,7 @@ function renderHistorial() {
       const sKey = 's-'+(o.estado||'').replace(' ','-');
       const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
       return `<tr>
-        <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+        <td class="id-mono" data-tip="${o.fbKey||o.id}">${o.id||o._nro}</td>
         <td class="id-mono">${o.fecha}</td>
         <td><span class="tipo-badge ${{SUSCRIPCION:'t-suscripcion',RESCATE:'t-rescate'}[o.tipo]||''}">${o.tipo}</span></td>
         <td class="id-mono">${o.comitente}</td>
@@ -3218,7 +3287,7 @@ function renderHistorial() {
 
       if (isInstHist) {
         return `<tr>
-          <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+          <td class="id-mono" data-tip="${o.fbKey||o.id}">${o.id||o._nro}</td>
           <td class="id-mono">${o.fecha}</td>
           <td class="id-mono">${o.comitenteCompra||'—'}</td>
           <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.nombreCompra||'—'}</td>
@@ -3236,7 +3305,7 @@ function renderHistorial() {
         </tr>`;
       }
       return `<tr>
-        <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+        <td class="id-mono" data-tip="${o.fbKey||o.id}">${o.id||o._nro}</td>
         <td class="id-mono">${o.fecha}</td>
         <td class="id-mono">${o.comitenteCompra||'—'}</td>
         ${histSnbOp!=='all'?`<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.nombreCompra||'—'}</td>`:''}
@@ -3276,7 +3345,7 @@ function renderHistorial() {
       const sKey = 's-'+(o.estado||'').replace(' ','-');
       const comName = comerciales.find(c=>c.id===o.solicitadoPor)?.name||o.solicitadoPor;
       return `<tr>
-        <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+        <td class="id-mono" data-tip="${o.fbKey||o.id}">${o.id||o._nro}</td>
         <td class="id-mono">${o.fecha}</td>
         <td><span class="tipo-badge t-ppt">${o.tipo}</span></td>
         <td style="font-size:11px;font-weight:700;color:var(--navy)">${o.pptTipo||'—'}</td>
@@ -3310,7 +3379,7 @@ function renderHistorial() {
       let detalle = o.fondo || o.banco || o.monedaConv || '—';
       if (o.moneda) detalle += ' · '+o.moneda;
       return `<tr>
-        <td class="id-mono" data-tip="${o.id||o.fbKey}">${o._nro}</td>
+        <td class="id-mono" data-tip="${o.fbKey||o.id}">${o.id||o._nro}</td>
         <td class="id-mono">${o.fecha}</td>
         <td><span class="tipo-badge ${tipoClass}">${o.tipo}</span></td>
         <td class="id-mono">${o.comitente}</td>
@@ -3645,7 +3714,7 @@ function submitOrder() {
   const tab = getTabName(currentView);
   if (!selectedClient && tab !== 'senebi') { showToast('⚠ Seleccioná un cliente'); return; }
   orderCounter++;
-  const prefixes = {fci:'FCI',pagos:'PAG',conv:'CON',lic:'LIC',senebi:'SNB'};
+  const prefixes = {fci:'FCI',pagos:'PAG',conv:'CNV',lic:'LIC',senebi:'SNB',ppt:'PPT'};
   const prefix = prefixes[tab]||'ORD';
   const id = `${prefix}-${String(orderCounter).padStart(3,'0')}`;
   const fechaValor = tab==='fci'   ? document.getElementById('f-fecha-fci').value
@@ -3653,9 +3722,13 @@ function submitOrder() {
               : tab==='conv'  ? document.getElementById('f-fecha-conv').value
               : '';
 
+  const ahora = new Date();
+  const horaCarga = String(ahora.getHours()).padStart(2,'0') + ':' + String(ahora.getMinutes()).padStart(2,'0');
+
   const newOrder = {
     id, tab, tipo,
     fecha: TODAY,
+    horaCarga: horaCarga,
     fechaValor: fechaValor || TODAY,
     comitente: tab==='senebi' ? (selectedSenebiCompra?.comitente||'') : selectedClient.comitente,
     cliente:   tab==='senebi' ? (selectedSenebiCompra?.nombre||'')    : selectedClient.nombre,
@@ -3859,6 +3932,9 @@ function addComercial() {
   renderComerciales();
   buildLoginSelect();
   populateHistComercial();
+  // Persistir en Firebase
+  if (window.__db) window.__db.ref('comerciales').set(comerciales);
+  if (window.__db) window.__db.ref('usuarios/'+id).set({password: passwords[id], firstLogin: true});
   showToast('✓ Comercial "'+name+'" agregado — contraseña inicial: '+name.toLowerCase().split(' ')[0]);
 }
 
@@ -3866,6 +3942,8 @@ function removeComercial(id) {
   comerciales = comerciales.filter(c=>c.id!==id);
   renderComerciales();
   buildLoginSelect();
+  // Persistir en Firebase
+  if (window.__db) window.__db.ref('comerciales').set(comerciales);
   showToast('Comercial dado de baja');
 }
 
@@ -3883,10 +3961,14 @@ function addBank() {
   if (!name) return;
   if (banks.includes(name)) { showToast('Ese banco ya existe'); return; }
   banks.push(name); document.getElementById('new-bank').value='';
-  renderBanks(); showToast('✓ Banco "'+name+'" agregado');
+  renderBanks();
+  if (window.__db) window.__db.ref('bancos').set(banks);
+  showToast('✓ Banco "'+name+'" agregado');
 }
 function removeBank(idx) {
-  banks.splice(idx,1); renderBanks(); showToast('Banco eliminado');
+  banks.splice(idx,1); renderBanks();
+  if (window.__db) window.__db.ref('bancos').set(banks);
+  showToast('Banco eliminado');
 }
 
 function renderFondosAdmin() {
@@ -4100,6 +4182,21 @@ window.__db.ref('fondos').on('value', function(snapshot) {
     fondos = Object.values(data).filter(function(f){ return f && f.trim(); });
   }
   if (typeof renderFondosAdmin==='function' && currentUser && currentUser.isAdmin) renderFondosAdmin();
+});
+
+// Realtime bancos listener
+window.__db.ref('bancos').on('value', function(snapshot) {
+  var data = snapshot.val();
+  if (data && Array.isArray(data) && data.length > 0) {
+    banks = data.filter(function(b){ return b && b.trim(); });
+  } else if (data && typeof data === 'object') {
+    var arr = Object.values(data).filter(function(b){ return b && b.trim(); });
+    if (arr.length > 0) banks = arr;
+  } else if (data === null) {
+    // No hay datos guardados aun: persistir el array base actual
+    window.__db.ref('bancos').set(banks);
+  }
+  if (typeof renderBanks==='function' && currentUser && currentUser.isAdmin) renderBanks();
 });
 
 // Realtime clientes listener
