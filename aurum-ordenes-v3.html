@@ -2024,12 +2024,8 @@ function setVistaFutura(futura) {
 function filterByUser(rows, tab) {
   if (!currentUser) return rows;
   if (currentUser.isAdmin) return rows;
-  // Middle Office (Gaston/Julian) ven TODAS las ordenes en sus modulos (senebi/ppt/lic)
-  if (isSuperComercial(tab)) return rows;
-  // En el resto de los modulos, Middle Office actua como comercial regular
-  if (isMiddleOffice()) {
-    return rows.filter(o => o.solicitadoPor === currentUser.id || o.creadaPor === currentUser.id);
-  }
+  // Middle Office (Gaston/Julian) ven TODAS las ordenes de todos los usuarios en todos los modulos
+  if (isMiddleOffice()) return rows;
   return rows.filter(o => o.solicitadoPor === currentUser.id);
 }
 
