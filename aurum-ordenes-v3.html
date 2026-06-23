@@ -2495,7 +2495,8 @@ function clearSenebiVenta() {
 function getBtns(o) {
   var s = 'background:none;border:1.5px solid #DDE3F0;color:#3A4670;padding:3px 7px;border-radius:6px;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;margin-right:3px';
   var eid = o.fbKey || o.id;
-  var vBtn = '<button style="'+s+';border-color:#2D7DD2;color:#2D7DD2" onclick="showComentario(\''+eid+'\')">&#128065; Ver</button>';
+  var vColor = (o.comentarios && o.comentarios.trim()) ? '#E04B4B' : '#2D7DD2';
+  var vBtn = '<button style="'+s+';border-color:'+vColor+';color:'+vColor+'" onclick="showComentario(\''+eid+'\')">&#128065; Ver</button>';
   var eBtn = '<button style="'+s+'" onclick="editOrder(\''+eid+'\')">&#9998; Editar</button>';
   var dBtn = '<button style="'+s+'" onclick="deleteOrder(\''+eid+'\')">&#128465; Eliminar</button>';
   // Admin puede todo
